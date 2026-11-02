@@ -49,7 +49,7 @@ export function saveClientPermissions(permissions) {
 export function isStaffUser(currentUser) {
   if (!currentUser) return false;
   const role = currentUser.role || '';
-  return role === 'super_admin' || role === 'editor';
+  return role === 'super_admin' || role === 'admin' || role === 'editor';
 }
 
 /**

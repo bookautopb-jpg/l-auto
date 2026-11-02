@@ -483,7 +483,7 @@ export default function Navbar({
                       <span>{currentUser.name || currentUser.username}</span>
                     </p>
                     <p className="text-[10px] text-slate-400 font-mono">
-                      {currentUser.roleLabel || (currentUser.role === 'super_admin' ? 'Super Admin (Proprietario)' : 'Gestore / Editor')}
+                      {currentUser.roleLabel || (currentUser.role === 'super_admin' ? 'Super Admin (Proprietario)' : currentUser.role === 'admin' ? 'Admin (Amministratore)' : 'Gestore / Editor')}
                     </p>
                   </div>
                 </div>

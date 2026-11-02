@@ -1432,6 +1432,7 @@ export default function AdminModal({
                       className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 font-semibold text-xs sm:text-sm"
                     >
                       <option value="super_admin">👑 Super Admin (Proprietario)</option>
+                      <option value="admin">⭐ Admin (Amministratore)</option>
                       <option value="editor">🛠️ Gestore / Editor</option>
                       <option value="viewer">👁️ Visualizzatore / Cliente</option>
                     </select>
@@ -1525,6 +1526,7 @@ export default function AdminModal({
                                 className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 font-semibold text-xs"
                               >
                                 <option value="super_admin">👑 Super Admin (Proprietario)</option>
+                                <option value="admin">⭐ Admin (Amministratore)</option>
                                 <option value="editor">🛠️ Gestore / Editor</option>
                                 <option value="viewer">👁️ Visualizzatore / Cliente</option>
                               </select>
@@ -1562,6 +1564,7 @@ export default function AdminModal({
                             <span className="font-mono text-slate-400 text-xs">(@{u.username})</span>
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                               u.role === 'super_admin' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+                              u.role === 'admin' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
                               u.role === 'editor' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
                               'bg-sky-500/20 text-sky-300 border border-sky-500/40'
                             }`}>
@@ -1804,7 +1807,7 @@ export default function AdminModal({
                     <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                       Scegli cosa possono vedere o non vedere le persone esterne (clienti e visitatori del sito).
                       <br className="hidden sm:inline" />
-                      <strong className="text-amber-300"> Nota:</strong> Tu come <span className="underline">Super Admin</span> e Luciano come <span className="underline">Gestore</span> avrete <strong>SEMPRE visibilità completa al 100%</strong> su scadenze e dati riservati.
+                      <strong className="text-amber-300"> Nota:</strong> Tu come <span className="underline">Super Admin</span>, Luciano come <span className="underline">Gestore</span> e tutti gli <span className="underline">Admin</span> avrete <strong>SEMPRE visibilità completa al 100%</strong> su scadenze e dati riservati.
                     </p>
                   </div>
                   <span className="shrink-0 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
@@ -1912,7 +1915,7 @@ export default function AdminModal({
                         )}
                       </div>
                       <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                        Se disattivato, il codice di telaio (VIN) sarà oscurato o visibile solo a te e a Luciano.
+                        Se disattivato, il codice di telaio (VIN) sarà oscurato o visibile solo a te, a Luciano e agli Admin.
                       </p>
                     </div>
                   </div>

@@ -639,7 +639,7 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                             <span className="ml-2 font-mono text-[11px] text-slate-400">(@{u.username})</span>
                           </div>
                           <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-700">
-                            {u.role === 'super_admin' ? 'Super Admin' : u.role === 'editor' ? 'Editor' : 'Cliente'}
+                            {u.role === 'super_admin' ? 'Super Admin' : u.role === 'admin' ? 'Admin' : u.role === 'editor' ? 'Editor' : 'Cliente'}
                           </span>
                         </div>
                       );

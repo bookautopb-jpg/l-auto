@@ -16,6 +16,12 @@ export const USER_ROLES = {
     desc: 'Accesso completo: gestione vetture, utenti, sfondi, backup e eliminazioni.',
     color: 'amber'
   },
+  ADMIN: {
+    id: 'admin',
+    name: 'Admin (Amministratore)',
+    desc: 'Accesso amministrativo alle vetture, dati riservati, telaio VIN e scadenze.',
+    color: 'amber'
+  },
   EDITOR: {
     id: 'editor',
     name: 'Gestore / Editor',
