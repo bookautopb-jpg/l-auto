@@ -37,6 +37,13 @@
   }
 }
 
+/* Modal Background Scroll Lock - completely freezes page underneath popup */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
 /* Military Theme Glass & Accent Overrides */
 body.theme-military .glass-panel {
   background: rgba(18, 26, 16, 0.85) !important;

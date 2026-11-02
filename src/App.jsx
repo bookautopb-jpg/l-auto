@@ -23,6 +23,7 @@ import { fetchCarsFromSupabase, syncCarsToSupabase, upsertSingleCarToSupabase, f
 import { saveCarsToLocal, getCarsFromLocal } from './utils/storage';
 import { getClientPermissions, saveClientPermissions, isStaffUser, canViewExpirations } from './utils/permissions';
 import { markCarAsPermanentlyDeleted, markCarsAsPermanentlyDeleted, filterOutDeletedCars, syncDeletedCarsWithCloud } from './utils/deletedCars';
+import { useBodyScrollLock } from './utils/scrollLock';
 
 const LOCAL_STORAGE_KEY = 'book_auto_pb_cars_v1';
 
@@ -101,6 +102,19 @@ export default function App() {
   const [isCartellaDocumentiOpen, setIsCartellaDocumentiOpen] = useState(false);
   const [autoEmailPopupAlerts, setAutoEmailPopupAlerts] = useState(null);
   const hasShownEmailAlertRef = useRef(false);
+
+  // Freeze/lock background page scroll whenever ANY popup or modal is open
+  const isAnyModalOpen = Boolean(
+    selectedCar ||
+    isAddModalOpen ||
+    isBackupModalOpen ||
+    isPdfReportModalOpen ||
+    isBrandLogosModalOpen ||
+    isExpirationsModalOpen ||
+    isAdminModalOpen ||
+    isCartellaDocumentiOpen
+  );
+  useBodyScrollLock(isAnyModalOpen);
 
   // Automatic Email Expiration Check on Load / Login (Staff Only: Super Admin & Editor)
   useEffect(() => {

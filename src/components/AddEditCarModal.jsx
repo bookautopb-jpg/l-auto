@@ -33,6 +33,7 @@ import { openDocument, downloadDocument } from '../utils/documentViewer';
 import { processScannedDocumentFile } from '../utils/storage';
 import ImageCropperModal from './ImageCropperModal';
 import BrandLogosModal from './BrandLogosModal';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 export { getLogoForBrand };
 
@@ -66,6 +67,7 @@ export default function AddEditCarModal({
   onSaveCar, 
   existingBrands 
 }) {
+  useBodyScrollLock(true);
   const [activeFormTab, setActiveFormTab] = useState('general'); // 'general' | 'extended'
 
   const [availableLocations, setAvailableLocations] = useState(() => getLocations());
@@ -393,7 +395,7 @@ export default function AddEditCarModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in">
       <div 
         className="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl border border-white/10 my-auto flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}

@@ -23,6 +23,7 @@ import {
 import { getLogoForBrand, isValidBrandLogo } from '../utils/brandLogos';
 import { toInputDateFormat, toDisplayDateFormat } from '../utils/notifications';
 import { sendTestEmailMailto } from '../utils/emailAlerts';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 export default function ExpirationsModal({ 
   alerts = [], 
@@ -32,6 +33,7 @@ export default function ExpirationsModal({
   onUpdateCarExpirations,
   currentUser
 }) {
+  useBodyScrollLock(true);
   const [filterLevel, setFilterLevel] = useState('all'); // 'all' | 'expired_urgent' | '1month' | '2months' | 'all_cars'
   const [testSentMsg, setTestSentMsg] = useState('');
   const [successFeedback, setSuccessFeedback] = useState('');
@@ -184,7 +186,7 @@ export default function ExpirationsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto animate-fade-in">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in">
       
       {/* Modal Shell */}
       <div 

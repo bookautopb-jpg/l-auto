@@ -49,6 +49,7 @@ import {
   canViewPrices 
 } from '../utils/permissions';
 import { getLogoForBrand, isValidBrandLogo } from '../utils/brandLogos';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 export default function CarDetailModal({ 
   car, 
@@ -65,6 +66,7 @@ export default function CarDetailModal({
   currentUser,
   clientPermissions
 }) {
+  useBodyScrollLock(true);
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('photos'); // 'photos' | 'pdf'
   const [copiedVin, setCopiedVin] = useState(false);
@@ -293,7 +295,7 @@ export default function CarDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in">
       <div 
         className="glass-panel w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-white/10 my-auto flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}

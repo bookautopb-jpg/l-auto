@@ -65,6 +65,7 @@ import { syncPermissionsToSupabase, upsertSingleCarToSupabase } from '../utils/s
 import { openDocument, downloadDocument } from '../utils/documentViewer';
 import { processScannedDocumentFile } from '../utils/storage';
 import { importFolderFiles } from '../utils/folderImporter';
+import { useBodyScrollLock } from '../utils/scrollLock';
 import { Send, Copy, FileText } from 'lucide-react';
 
 export default function AdminModal({ 
@@ -82,6 +83,7 @@ export default function AdminModal({
   clientPermissions,
   onPermissionsUpdated
 }) {
+  useBodyScrollLock(true);
   const [activeTab, setActiveTab] = useState('tools'); // 'tools' | 'permissions' | 'users' | 'backgrounds' | 'locations' | 'documents'
 
   // Documents & Scans Management State
@@ -605,7 +607,7 @@ export default function AdminModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in">
       <div 
         className="glass-panel w-full max-w-5xl rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 my-auto flex flex-col max-h-[96vh] sm:max-h-[92vh] bg-slate-900 text-slate-100"
         onClick={(e) => e.stopPropagation()}

@@ -46,6 +46,22 @@ async function deploy() {
       console.log('✅ assets directory uploaded successfully!');
     }
 
+    const localImages = path.join(distDir, 'images');
+    const remoteImages = `${remoteDir}/images`;
+    if (fs.existsSync(localImages)) {
+      console.log(`Checking images directory in ${remoteImages}...`);
+      const imageFiles = fs.readdirSync(localImages);
+      for (const file of imageFiles) {
+        const fullLocalPath = path.join(localImages, file);
+        const stat = fs.statSync(fullLocalPath);
+        if (stat.isFile()) {
+          console.log(`Uploading image ${file} to ${remoteImages}/${file}...`);
+          await sftp.fastPut(fullLocalPath, `${remoteImages}/${file}`);
+        }
+      }
+      console.log('✅ images directory files uploaded successfully!');
+    }
+
     console.log('🎉 100% DEPLOYED SUCCESSFULLY TO DREAMHOST!');
   } catch (err) {
     console.error('❌ SFTP Deploy Error:', err.message);

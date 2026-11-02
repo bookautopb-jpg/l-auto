@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw, RotateCw, Crop, Check, X, Move, Maximize, RefreshCw } from 'lucide-react';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 export default function ImageCropperModal({
   imageSrc,
@@ -8,6 +9,7 @@ export default function ImageCropperModal({
   onCropSave,
   onClose
 }) {
+  useBodyScrollLock(true);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -257,7 +259,7 @@ export default function ImageCropperModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in">
       
       <div 
         className="glass-panel w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[95vh]"

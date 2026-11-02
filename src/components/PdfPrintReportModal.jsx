@@ -8,6 +8,7 @@ import { PDF_FONT_OPTIONS, getDefaultPdfFont } from '../utils/pdfFonts';
 import { openDocument, downloadDocument, getDocumentSource, getSafeDocumentBlobUrl } from '../utils/documentViewer';
 import { isStaffUser } from '../utils/permissions';
 import PdfPageCanvas from './PdfPageCanvas';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 // Helper to categorize documents into standard buckets: 'libretto', 'assicurazione', 'bollo', 'altro'
 export const getDocumentCategory = (doc) => {
@@ -29,6 +30,7 @@ export default function PdfPrintReportModal({
   currentUser,
   clientPermissions 
 }) {
+  useBodyScrollLock(true);
   const isStaff = isStaffUser(currentUser);
   const [includePhotos, setIncludePhotos] = useState(true);
   const [includeExtendedReport, setIncludeExtendedReport] = useState(false);
@@ -494,7 +496,7 @@ export default function PdfPrintReportModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-6 bg-slate-950/90 backdrop-blur-md overflow-y-auto animate-fade-in print:p-0 print:bg-white print:static print:inset-auto">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-6 bg-slate-950/90 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in print:p-0 print:bg-white print:static print:inset-auto">
       
       {/* Printable Report Modal Outer Shell */}
       <div 

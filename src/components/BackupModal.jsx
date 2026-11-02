@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { X, Download, Upload, FileSpreadsheet, Database } from 'lucide-react';
 import { getUsers, saveUsers, getBackgroundImages, saveBackgroundImages } from '../utils/auth';
 import { getCustomBrandLogos } from '../utils/brandLogos';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 export default function BackupModal({ 
   cars, 
@@ -9,6 +10,7 @@ export default function BackupModal({
   onImportData, 
   onResetData 
 }) {
+  useBodyScrollLock(true);
   const fileInputRef = useRef(null);
 
   // Export JSON backup (Full site payload: cars, users, backgrounds, custom logos)
@@ -109,7 +111,7 @@ export default function BackupModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in">
       <div 
         className="glass-panel w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-white/10 my-auto flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}

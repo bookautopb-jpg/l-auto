@@ -30,6 +30,7 @@ import { openDocument, downloadDocument } from '../utils/documentViewer';
 import { processScannedDocumentFile } from '../utils/storage';
 import { upsertSingleCarToSupabase } from '../utils/supabase';
 import { importFolderFiles } from '../utils/folderImporter';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 export default function CartellaDocumentiModal({ 
   isOpen, 
@@ -38,6 +39,7 @@ export default function CartellaDocumentiModal({
   onUpdateCars, 
   currentUser 
 }) {
+  useBodyScrollLock(isOpen);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all'); // 'all', 'libretto', 'assicurazione', 'bollo', 'with_docs', 'missing_docs'
   const [activeCarId, setActiveCarId] = useState(null); // When viewing a single car folder
@@ -246,7 +248,7 @@ export default function CartellaDocumentiModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overscroll-contain animate-fade-in">
       <div className="relative w-full max-w-6xl h-[92vh] max-h-[880px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
         
         {/* Header */}

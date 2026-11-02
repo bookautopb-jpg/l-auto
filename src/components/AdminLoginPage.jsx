@@ -16,12 +16,14 @@ import {
 import { authenticateUser, authenticateUserAsync, syncUsersWithCloud, getBackgroundImages, USER_ROLES } from '../utils/auth';
 import BouncingCarsCanvas from './BouncingCarsCanvas';
 import ForgotCredentialsModal from './ForgotCredentialsModal';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 export default function AdminLoginPage({
   onLoginSuccess,
   onClose,
   clientPermissions
 }) {
+  useBodyScrollLock(true);
   const loginCardRef = useRef(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -80,7 +82,7 @@ export default function AdminLoginPage({
   const currentBgUrl = backgrounds[currentBgIndex] || './images/bg_2.jpg';
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in bg-slate-950">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 overflow-y-auto overscroll-contain animate-fade-in bg-slate-950">
 
       {/* Background Car Image Slideshow with Overlay */}
       <div className="absolute inset-0 z-0 overflow-hidden">

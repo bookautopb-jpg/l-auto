@@ -22,8 +22,10 @@ import {
   verifyMasterPin
 } from '../utils/auth';
 import { sendPasswordRecoveryEmail, getAdminEmail } from '../utils/emailAlerts';
+import { useBodyScrollLock } from '../utils/scrollLock';
 
 export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset }) {
+  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   // Active Tab: 'email' (Option 2) or 'pin' (Option 3)
@@ -265,7 +267,7 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
   const allUsersList = getUsers();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto overscroll-contain animate-fade-in">
       <div className="relative w-full max-w-lg bg-slate-900/95 border border-amber-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl shadow-amber-500/10 text-slate-100 overflow-hidden">
         
         {/* Glow ambient background effects */}
