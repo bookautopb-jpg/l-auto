@@ -4,8 +4,8 @@ import {
   syncUsersToSupabase,
   fetchBackgroundsFromSupabase,
   syncBackgroundsToSupabase
-} from './supabase';
-import { saveUsersToIndexedDB, getUsersFromIndexedDB } from './storage';
+} from './supabase.js';
+import { saveUsersToIndexedDB, getUsersFromIndexedDB } from './storage.js';
 
 const USERS_STORAGE_KEY = 'book_auto_pb_users_v2';
 const BACKGROUNDS_STORAGE_KEY = 'book_auto_pb_bg_images_v1';
@@ -13,7 +13,7 @@ const BACKGROUNDS_STORAGE_KEY = 'book_auto_pb_bg_images_v1';
 // Central DreamHost Server API endpoint for multi-device sync
 const DREAMHOST_API_USERS = 'https://nisshi.dreamhosters.com/api/users.php';
 function getUsersApiUrl() {
-  if (typeof window === 'undefined') return '/api/users.php';
+  if (typeof window === 'undefined') return DREAMHOST_API_USERS;
   if (window.location.hostname.includes('dreamhosters.com') || window.location.hostname.includes('nisshi')) {
     return './api/users.php';
   }
@@ -80,6 +80,9 @@ export const INITIAL_USERS = [
 export function getUsers() {
   if (Array.isArray(memoryUsersCache) && memoryUsersCache.length > 0) {
     return memoryUsersCache;
+  }
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return memoryUsersCache || INITIAL_USERS;
   }
   try {
     const saved = localStorage.getItem(USERS_STORAGE_KEY);
