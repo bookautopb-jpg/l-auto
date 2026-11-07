@@ -10,14 +10,16 @@ export default function AutoEmailNotificationPopup({
   onOpenAdminModal,
   currentUser
 }) {
+  const [copiedMsg, setCopiedMsg] = useState('');
+  const [statusMsg, setStatusMsg] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const activeUser = currentUser || getCurrentUser();
+
   // Clienti e visitatori NON devono MAI vedere questo popup
   if (!isStaffUser(activeUser)) {
     return null;
   }
-  const [copiedMsg, setCopiedMsg] = useState('');
-  const [statusMsg, setStatusMsg] = useState('');
-  const [isSending, setIsSending] = useState(false);
+
   const adminEmail = getAdminEmail();
 
   const handleSendEmail = async () => {

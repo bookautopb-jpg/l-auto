@@ -26,7 +26,6 @@ import { useBodyScrollLock } from '../utils/scrollLock';
 
 export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset }) {
   useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   // Active Tab: 'email' (Option 2) or 'pin' (Option 3)
   const [activeTab, setActiveTab] = useState('email');
@@ -56,6 +55,8 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
   const [pinConfirmPassword, setPinConfirmPassword] = useState('');
   const [showPinPassword, setShowPinPassword] = useState(false);
   const [pinStatusMsg, setPinStatusMsg] = useState({ type: '', text: '' });
+
+  if (!isOpen) return null;
 
   // Helper to mask email for security (e.g. sh***@domain.com)
   const maskEmail = (email) => {

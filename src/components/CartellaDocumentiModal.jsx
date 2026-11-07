@@ -50,8 +50,6 @@ export default function CartellaDocumentiModal({
   // Hidden file inputs for category upload
   const fileInputRef = useRef({});
 
-  if (!isOpen) return null;
-
   // Active Car if inside a specific folder
   const activeCar = useMemo(() => {
     if (!activeCarId) return null;
@@ -106,6 +104,8 @@ export default function CartellaDocumentiModal({
       return true;
     });
   }, [cars, searchQuery, selectedCategoryFilter]);
+
+  if (!isOpen) return null;
 
   // Show temporary notice
   const triggerNotice = (message, type = 'success') => {

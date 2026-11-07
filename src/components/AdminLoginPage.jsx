@@ -256,15 +256,17 @@ export default function AdminLoginPage({
       </div>
 
       {/* Forgot Credentials Modal (Option 2 via Email & Option 3 Master PIN) */}
-      <ForgotCredentialsModal
-        isOpen={showForgotModal}
-        onClose={() => setShowForgotModal(false)}
-        onSuccessReset={(recoveredUsername) => {
-          if (recoveredUsername) {
-            setUsername(recoveredUsername);
-          }
-        }}
-      />
+      {showForgotModal && (
+        <ForgotCredentialsModal
+          isOpen={showForgotModal}
+          onClose={() => setShowForgotModal(false)}
+          onSuccessReset={(recoveredUsername) => {
+            if (recoveredUsername) {
+              setUsername(recoveredUsername);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
