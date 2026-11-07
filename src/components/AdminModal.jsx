@@ -45,12 +45,15 @@ import {
   setCurrentUser,
   getMasterRecoveryPin,
   setMasterRecoveryPin,
+  getAdminRecoveryEmail,
+  setAdminRecoveryEmail,
   INITIAL_USERS
 } from '../utils/auth';
 import { getLocations, addLocation, removeLocation } from '../utils/locations';
 import { 
   getAdminEmail,
   setAdminEmail,
+  sendPasswordRecoveryEmail,
   sendTestEmailMailto, 
   copyEmailReportToClipboard, 
   generateEmailReportText,
@@ -300,6 +303,11 @@ export default function AdminModal({
   const [masterPin, setMasterPin] = useState(() => getMasterRecoveryPin());
   const [masterPinMsg, setMasterPinMsg] = useState('');
 
+  // Super Admin Recovery Email State (OTP Codes)
+  const [recoveryEmail, setRecoveryEmail] = useState(() => getAdminRecoveryEmail());
+  const [recoveryEmailMsg, setRecoveryEmailMsg] = useState({ type: '', text: '' });
+  const [isSendingRecoveryTest, setIsSendingRecoveryTest] = useState(false);
+
   // Edit User State
   const [editingUserId, setEditingUserId] = useState(null);
   const [editUsername, setEditUsername] = useState('');
@@ -473,6 +481,11 @@ export default function AdminModal({
           setCurrentUser(updatedUser);
         }
 
+        if (updatedUser.role === 'super_admin' && updatedUser.email) {
+          setAdminRecoveryEmail(updatedUser.email);
+          setRecoveryEmail(updatedUser.email);
+        }
+
         return updatedUser;
       }
       return u;
@@ -503,6 +516,74 @@ export default function AdminModal({
     } else {
       triggerSuperAdminAuthModal(() => {
         doSave();
+      });
+    }
+  };
+
+  const handleSaveRecoveryEmail = (e) => {
+    if (e) e.preventDefault();
+    const clean = (recoveryEmail || '').trim();
+    if (clean && !clean.includes('@')) {
+      setRecoveryEmailMsg({ type: 'error', text: 'Inserisci un indirizzo email valido (es. nome@outlook.it, nome@yahoo.it).' });
+      return;
+    }
+
+    const doSave = () => {
+      setAdminRecoveryEmail(clean);
+      setRecoveryEmail(clean);
+      setAdminEmailState(clean);
+      setRecoveryEmailMsg({ type: 'success', text: `Email di recupero salvata: ${clean || '(Nessuna)'}` });
+      setTimeout(() => setRecoveryEmailMsg({ type: '', text: '' }), 4000);
+    };
+
+    if (isSuperAdminUnlocked) {
+      doSave();
+    } else {
+      triggerSuperAdminAuthModal(() => {
+        doSave();
+      });
+    }
+  };
+
+  const handleSendTestRecoveryOtp = async () => {
+    const clean = (recoveryEmail || '').trim();
+    if (!clean || !clean.includes('@')) {
+      setRecoveryEmailMsg({ type: 'error', text: 'Inserisci prima un indirizzo email valido per inviare il codice di prova.' });
+      return;
+    }
+
+    setAdminRecoveryEmail(clean);
+    setRecoveryEmail(clean);
+    setAdminEmailState(clean);
+
+    setIsSendingRecoveryTest(true);
+    setRecoveryEmailMsg({ type: 'info', text: `Invio codice OTP di prova a ${clean} in corso...` });
+
+    const testOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    try {
+      const res = await sendPasswordRecoveryEmail(
+        clean,
+        'Super Admin',
+        testOtp,
+        'shirantha'
+      );
+      setIsSendingRecoveryTest(false);
+      if (res && res.success) {
+        setRecoveryEmailMsg({
+          type: 'success',
+          text: `✅ Codice di prova (${testOtp}) inviato con successo a ${clean}! Controlla la casella di posta (inclusa la cartella Spam / Posta Indesiderata).`
+        });
+      } else {
+        setRecoveryEmailMsg({
+          type: 'error',
+          text: `❌ Invio non riuscito: ${res?.reason || 'Verifica la connessione o l\'indirizzo email.'}`
+        });
+      }
+    } catch (err) {
+      setIsSendingRecoveryTest(false);
+      setRecoveryEmailMsg({
+        type: 'error',
+        text: `❌ Errore durante l'invio: ${err.message || 'Errore di connessione'}`
       });
     }
   };
@@ -1827,6 +1908,91 @@ export default function AdminModal({
                     );
                   })}
                 </div>
+              </div>
+
+              {/* SUPER ADMIN RECOVERY EMAIL & OTP CARD (OPTION 2) */}
+              <div className="bg-slate-950/90 p-4 rounded-2xl border border-amber-500/40 space-y-3 shadow-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                  <div className="flex items-center space-x-2">
+                    <Mail className="w-4 h-4 text-amber-400" />
+                    <h4 className="font-bold text-amber-300 text-xs uppercase tracking-wider">
+                      Email per Ricezione Codici OTP &amp; Recupero Password (Super Admin)
+                    </h4>
+                  </div>
+                  <span className="inline-flex items-center text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20 w-fit">
+                    Opzione 2 • Recupero via Email
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Configura l'indirizzo email a cui vengono inviati i codici di verifica OTP quando richiedi il recupero delle credenziali. Puoi cambiarlo liberamente in qualsiasi momento.
+                </p>
+
+                <div className="bg-amber-950/20 border border-amber-500/20 rounded-xl p-3 text-[11px] text-amber-200/90 leading-relaxed space-y-1">
+                  <div className="font-semibold text-amber-300 flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Consiglio per la ricezione garantita:</span>
+                  </div>
+                  <p>
+                    Se noti che i codici non arrivano su Gmail a causa dei rigorosi filtri antispam di Google, ti consigliamo di impostare qui un'email su un altro servizio (es. <strong>Outlook</strong>, <strong>Hotmail</strong>, <strong>Yahoo</strong>, <strong>Libero</strong>, <strong>iCloud</strong> o <strong>dominio aziendale</strong>), che riceve regolarmente i codici senza blocchi.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
+                  <div className="relative flex-1">
+                    <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      value={recoveryEmail}
+                      onChange={(e) => setRecoveryEmail(e.target.value)}
+                      placeholder="Es. nome@outlook.it, nome@yahoo.it, ecc."
+                      className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs sm:text-sm font-medium focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleSaveRecoveryEmail}
+                      className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Salva Email</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSendTestRecoveryOtp}
+                      disabled={isSendingRecoveryTest}
+                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-amber-300 hover:text-amber-200 border border-amber-500/30 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
+                      title="Invia subito un codice OTP di test a questo indirizzo per verificare la ricezione"
+                    >
+                      {isSendingRecoveryTest ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                          <span>Invio in corso...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Invia Codice OTP di Prova</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {recoveryEmailMsg.text && (
+                  <div className={`p-2.5 rounded-xl border text-xs font-semibold animate-fade-in ${
+                    recoveryEmailMsg.type === 'error'
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                      : recoveryEmailMsg.type === 'info'
+                      ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  }`}>
+                    {recoveryEmailMsg.text}
+                  </div>
+                )}
               </div>
 
               {/* MASTER PIN RECOVERY CARD (OPTION 3) */}

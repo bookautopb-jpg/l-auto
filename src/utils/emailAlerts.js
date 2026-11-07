@@ -3,11 +3,9 @@ import { getVehicleExpirations } from './notifications';
 
 export function getAdminEmail() {
   const saved = localStorage.getItem('book_auto_pb_admin_email') || '';
-  if (saved.toUpperCase().includes('SHIRANTHA11')) {
-    localStorage.removeItem('book_auto_pb_admin_email');
-    return '';
-  }
-  return saved.trim();
+  if (saved && saved.trim()) return saved.trim();
+  const recoveryEmail = localStorage.getItem('book_auto_pb_admin_recovery_email') || '';
+  return recoveryEmail.trim();
 }
 
 export function setAdminEmail(newEmail) {

@@ -19,7 +19,8 @@ import {
   getUsers,
   findUserForRecovery,
   updateUserPassword,
-  verifyMasterPin
+  verifyMasterPin,
+  getAdminRecoveryEmail
 } from '../utils/auth';
 import { sendPasswordRecoveryEmail, getAdminEmail } from '../utils/emailAlerts';
 import { useBodyScrollLock } from '../utils/scrollLock';
@@ -87,9 +88,12 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
       return;
     }
 
-    // Determine target email
+    // Determine target email: prioritizes dedicated Super Admin recovery email, user's email, or configured admin email
+    const recoveryEmail = getAdminRecoveryEmail();
     const configuredAdminEmail = getAdminEmail();
-    const destinationEmail = matchedUser.email || (matchedUser.role === 'super_admin' ? configuredAdminEmail : configuredAdminEmail);
+    const destinationEmail = (matchedUser.role === 'super_admin' 
+      ? (recoveryEmail || matchedUser.email || configuredAdminEmail) 
+      : (matchedUser.email || recoveryEmail || configuredAdminEmail))?.trim();
 
     if (!destinationEmail) {
       setEmailStatusMsg({

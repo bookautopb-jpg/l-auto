@@ -413,6 +413,66 @@ export function verifyMasterPin(inputPin) {
   return clean === savedPin || clean === '0822' || clean === '8822';
 }
 
+export const ADMIN_RECOVERY_EMAIL_KEY = 'book_auto_pb_admin_recovery_email';
+
+/**
+ * Returns current recovery email for Super Admin (OTP codes)
+ */
+export function getAdminRecoveryEmail() {
+  try {
+    const saved = localStorage.getItem(ADMIN_RECOVERY_EMAIL_KEY);
+    if (saved && saved.trim()) return saved.trim();
+  } catch (e) {}
+
+  // Fallback 1: check super_admin user email
+  const users = getUsers();
+  const superAdmin = users.find(u => u.role === 'super_admin');
+  if (superAdmin && superAdmin.email && superAdmin.email.trim()) {
+    return superAdmin.email.trim();
+  }
+
+  // Fallback 2: check book_auto_pb_admin_email
+  try {
+    const legacy = localStorage.getItem('book_auto_pb_admin_email');
+    if (legacy && legacy.trim()) return legacy.trim();
+  } catch (e) {}
+
+  return '';
+}
+
+/**
+ * Sets new recovery email for Super Admin (OTP codes)
+ * Also updates the super_admin user in the database so matching by email works
+ */
+export function setAdminRecoveryEmail(newEmail) {
+  const clean = (newEmail || '').trim();
+  try {
+    if (clean) {
+      localStorage.setItem(ADMIN_RECOVERY_EMAIL_KEY, clean);
+      localStorage.setItem('book_auto_pb_admin_email', clean);
+    } else {
+      localStorage.removeItem(ADMIN_RECOVERY_EMAIL_KEY);
+    }
+  } catch (e) {}
+
+  // Also update email on super_admin user in users list
+  const users = getUsers();
+  let changed = false;
+  const updatedUsers = users.map(u => {
+    if (u.role === 'super_admin') {
+      changed = true;
+      return { ...u, email: clean, updatedAt: new Date().toISOString() };
+    }
+    return u;
+  });
+
+  if (changed) {
+    saveUsers(updatedUsers);
+  }
+
+  return clean;
+}
+
 /**
  * Finds user for recovery by username, email, or admin email
  */
@@ -420,6 +480,7 @@ export function findUserForRecovery(identifier) {
   if (!identifier) return null;
   const clean = identifier.trim().toLowerCase();
   const users = getUsers();
+  const recoveryEmail = getAdminRecoveryEmail().toLowerCase();
   let adminEmail = '';
   try {
     adminEmail = (localStorage.getItem('book_auto_pb_admin_email') || '').trim().toLowerCase();
@@ -433,7 +494,13 @@ export function findUserForRecovery(identifier) {
   match = users.find(u => u.email && u.email.toLowerCase() === clean);
   if (match) return match;
 
-  // 3. Admin email match -> resolves to super_admin account
+  // 3. Admin recovery email match -> resolves to super_admin account
+  if (recoveryEmail && clean === recoveryEmail) {
+    match = users.find(u => u.role === 'super_admin');
+    if (match) return match;
+  }
+
+  // 4. Admin email match -> resolves to super_admin account
   if (adminEmail && clean === adminEmail) {
     match = users.find(u => u.role === 'super_admin');
     if (match) return match;
