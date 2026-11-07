@@ -72,6 +72,53 @@ export async function getCarsFromIndexedDB() {
   }
 }
 
+const USERS_RECORD_KEY = 'all_users';
+
+// Save users array to IndexedDB
+export async function saveUsersToIndexedDB(users) {
+  try {
+    const db = await openDB();
+    if (!db) return false;
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.put(users, USERS_RECORD_KEY);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => {
+        console.warn('IndexedDB put users error:', req.error);
+        resolve(false);
+      };
+    });
+  } catch (err) {
+    console.warn('IndexedDB write users exception:', err);
+    return false;
+  }
+}
+
+// Get users array from IndexedDB
+export async function getUsersFromIndexedDB() {
+  try {
+    const db = await openDB();
+    if (!db) return null;
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(USERS_RECORD_KEY);
+      req.onsuccess = () => {
+        const val = req.result;
+        resolve(Array.isArray(val) && val.length > 0 ? val : null);
+      };
+      req.onerror = () => {
+        console.warn('IndexedDB get users error:', req.error);
+        resolve(null);
+      };
+    });
+  } catch (err) {
+    console.warn('IndexedDB read users exception:', err);
+    return null;
+  }
+}
+
 // Strip heavy base64 fileData from documents for safe localStorage mirroring
 function createLightweightCarsCopy(cars) {
   if (!Array.isArray(cars)) return cars;

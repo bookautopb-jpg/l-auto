@@ -62,6 +62,14 @@ async function deploy() {
       console.log('✅ images directory files uploaded successfully!');
     }
 
+    const localApi = path.join(distDir, 'api');
+    const remoteApi = `${remoteDir}/api`;
+    if (fs.existsSync(localApi)) {
+      console.log(`Uploading api directory to ${remoteApi}...`);
+      await sftp.uploadDir(localApi, remoteApi);
+      console.log('✅ api directory uploaded successfully!');
+    }
+
     console.log('🎉 100% DEPLOYED SUCCESSFULLY TO DREAMHOST!');
   } catch (err) {
     console.error('❌ SFTP Deploy Error:', err.message);

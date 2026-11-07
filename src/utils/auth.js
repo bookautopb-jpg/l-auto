@@ -5,9 +5,22 @@ import {
   fetchBackgroundsFromSupabase,
   syncBackgroundsToSupabase
 } from './supabase';
+import { saveUsersToIndexedDB, getUsersFromIndexedDB } from './storage';
 
 const USERS_STORAGE_KEY = 'book_auto_pb_users_v2';
 const BACKGROUNDS_STORAGE_KEY = 'book_auto_pb_bg_images_v1';
+
+// Central DreamHost Server API endpoint for multi-device sync
+const DREAMHOST_API_USERS = 'https://nisshi.dreamhosters.com/api/users.php';
+function getUsersApiUrl() {
+  if (typeof window === 'undefined') return '/api/users.php';
+  if (window.location.hostname.includes('dreamhosters.com') || window.location.hostname.includes('nisshi')) {
+    return './api/users.php';
+  }
+  return DREAMHOST_API_USERS;
+}
+
+let memoryUsersCache = null;
 
 export const USER_ROLES = {
   SUPER_ADMIN: {
@@ -65,93 +78,195 @@ export const INITIAL_USERS = [
 ];
 
 export function getUsers() {
-  const saved = localStorage.getItem(USERS_STORAGE_KEY);
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    } catch (e) {
-      console.error('Error parsing users storage:', e);
-    }
+  if (Array.isArray(memoryUsersCache) && memoryUsersCache.length > 0) {
+    return memoryUsersCache;
   }
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(INITIAL_USERS));
+  try {
+    const saved = localStorage.getItem(USERS_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryUsersCache = parsed;
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error parsing users storage:', e);
+  }
+
+  try {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(INITIAL_USERS));
+  } catch (e) {}
+  memoryUsersCache = INITIAL_USERS;
   return INITIAL_USERS;
 }
 
 export function saveUsers(users) {
   if (!Array.isArray(users)) return;
-  // 1. Save locally
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-  // 2. Synchronize to Supabase Cloud in background
+  memoryUsersCache = users;
+
+  // 1. Safe LocalStorage save with quota exceeded fallback
+  try {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+  } catch (err) {
+    console.warn('LocalStorage quota exceeded on saveUsers, clearing non-critical caches:', err);
+    try {
+      localStorage.removeItem('book_auto_pb_cars_v2_light');
+      localStorage.removeItem('book_auto_pb_emailed_milestones');
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    } catch (retryErr) {
+      console.warn('Could not save users to localStorage:', retryErr);
+    }
+  }
+
+  // 2. Persistent IndexedDB save (unlimited capacity)
+  saveUsersToIndexedDB(users).catch(err => {
+    console.warn('IndexedDB save users error:', err);
+  });
+
+  // 3. Centralized DreamHost Server API Sync (Multi-Device)
+  try {
+    const apiUrl = getUsersApiUrl();
+    fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(users)
+    }).catch(err => {
+      console.warn('DreamHost server users sync error:', err);
+    });
+  } catch (e) {
+    console.warn('DreamHost API sync exception:', e);
+  }
+
+  // 4. Synchronize to Supabase Cloud if enabled
   syncUsersToSupabase(users).catch(err => {
     console.warn('Background syncUsersToSupabase error:', err);
   });
 }
 
-// Sync users between Supabase Cloud and local storage
+// Sync users between Central DreamHost Server, Supabase Cloud and local storage
 export async function syncUsersWithCloud() {
+  // 1. Central DreamHost Server API (Highest priority for multi-device sync)
+  try {
+    const apiUrl = getUsersApiUrl();
+    const res = await fetch(`${apiUrl}?t=${Date.now()}`, {
+      cache: 'no-store'
+    });
+    if (res.ok) {
+      const serverUsers = await res.json();
+      if (Array.isArray(serverUsers) && serverUsers.length > 0) {
+        memoryUsersCache = serverUsers;
+        try {
+          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(serverUsers));
+        } catch (e) {}
+        saveUsersToIndexedDB(serverUsers).catch(() => {});
+        return serverUsers;
+      }
+    }
+  } catch (serverErr) {
+    console.warn('DreamHost users API fetch error:', serverErr);
+  }
+
+  // 2. Supabase Cloud if configured
   try {
     const remoteUsers = await fetchUsersFromSupabase();
     if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(remoteUsers));
+      memoryUsersCache = remoteUsers;
+      try {
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(remoteUsers));
+      } catch (e) {}
+      saveUsersToIndexedDB(remoteUsers).catch(() => {});
       return remoteUsers;
-    } else {
-      // Cloud was empty: seed cloud with current users
-      const current = getUsers();
-      await syncUsersToSupabase(current);
-      return current;
     }
   } catch (e) {
     console.warn('Failed syncing users with cloud:', e);
   }
+
+  // 3. Fallback to IndexedDB
+  try {
+    const idbUsers = await getUsersFromIndexedDB();
+    if (Array.isArray(idbUsers) && idbUsers.length > 0) {
+      memoryUsersCache = idbUsers;
+      return idbUsers;
+    }
+  } catch (e) {}
+
   return getUsers();
 }
 
 /**
- * Mobile-friendly authentication matching:
+ * Mobile-friendly & flexible authentication matching:
  * - Trims hidden spaces from mobile keyboards
- * - Case-insensitive username check
+ * - Allows login by username, email, or full name!
  * - Exact password match + tolerant case-insensitive fallback (e.g. mobile auto-capitalized password)
  */
-export function authenticateUserWithList(username, password, usersList) {
+export function authenticateUserWithList(identifier, password, usersList) {
   if (!Array.isArray(usersList)) return null;
-  const cleanUser = (username || '').trim().toLowerCase();
+  const cleanId = (identifier || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
 
-  if (!cleanUser || !cleanPass) return null;
+  if (!cleanId || !cleanPass) return null;
 
-  // 1. Exact match (exact password, case-insensitive username)
-  const exact = usersList.find(
-    u => u.username.toLowerCase() === cleanUser && u.password === cleanPass
-  );
+  const isMatch = (u, passCandidate) => {
+    if (!u) return false;
+    const uUsername = (u.username || '').trim().toLowerCase();
+    const uEmail = (u.email || '').trim().toLowerCase();
+    const uName = (u.name || '').trim().toLowerCase();
+
+    // Check if identifier matches username, email, or name
+    const idMatches = (uUsername === cleanId) ||
+                      (uEmail && uEmail === cleanId) ||
+                      (uName && uName === cleanId);
+
+    if (!idMatches) return false;
+
+    // Check exact password
+    if (u.password === passCandidate) return true;
+    // Check case-insensitive password (mobile keyboard auto-capitalized first char)
+    if ((u.password || '').toLowerCase() === passCandidate.toLowerCase()) return true;
+    return false;
+  };
+
+  // 1. Exact pass check
+  const exact = usersList.find(u => isMatch(u, cleanPass));
   if (exact) return exact;
 
-  // 2. Mobile-friendly fallback: mobile keyboard auto-capitalized first character
-  const caseInsensitive = usersList.find(
-    u => u.username.toLowerCase() === cleanUser && u.password.toLowerCase() === cleanPass.toLowerCase()
-  );
-  if (caseInsensitive) return caseInsensitive;
+  // 2. Raw un-trimmed pass fallback in case password contains deliberate spaces
+  const rawPass = (password || '');
+  if (rawPass !== cleanPass) {
+    const rawMatch = usersList.find(u => isMatch(u, rawPass));
+    if (rawMatch) return rawMatch;
+  }
 
   return null;
 }
 
-export function authenticateUser(username, password) {
+export function authenticateUser(identifier, password) {
   const users = getUsers();
-  return authenticateUserWithList(username, password, users);
+  return authenticateUserWithList(identifier, password, users);
 }
 
-// Asynchronous authentication: checks local storage first, then checks Cloud if not found
-export async function authenticateUserAsync(username, password) {
-  // 1. Fast local check
-  const localMatch = authenticateUser(username, password);
+// Asynchronous authentication: checks local storage first, then checks IndexedDB and DreamHost Server API
+export async function authenticateUserAsync(identifier, password) {
+  // 1. Fast local check (localStorage)
+  const localMatch = authenticateUser(identifier, password);
   if (localMatch) return localMatch;
 
-  // 2. Fallback: refresh latest users from Supabase Cloud
+  // 2. Check IndexedDB
   try {
-    const cloudUsers = await syncUsersWithCloud();
-    if (Array.isArray(cloudUsers)) {
-      const cloudMatch = authenticateUserWithList(username, password, cloudUsers);
-      if (cloudMatch) return cloudMatch;
+    const idbUsers = await getUsersFromIndexedDB();
+    if (Array.isArray(idbUsers) && idbUsers.length > 0) {
+      const idbMatch = authenticateUserWithList(identifier, password, idbUsers);
+      if (idbMatch) return idbMatch;
+    }
+  } catch (e) {}
+
+  // 3. Fallback: fetch freshest users from DreamHost Central Server API
+  try {
+    const serverUsers = await syncUsersWithCloud();
+    if (Array.isArray(serverUsers) && serverUsers.length > 0) {
+      const serverMatch = authenticateUserWithList(identifier, password, serverUsers);
+      if (serverMatch) return serverMatch;
     }
   } catch (e) {
     console.warn('authenticateUserAsync cloud fetch error:', e);
