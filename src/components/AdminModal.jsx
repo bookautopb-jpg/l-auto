@@ -313,6 +313,7 @@ export default function AdminModal({
   const [revealedUserIds, setRevealedUserIds] = useState([]);
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [showNewUserPassword, setShowNewUserPassword] = useState(false);
+  const [showMasterPin, setShowMasterPin] = useState(false);
   const [superAdminAuthModal, setSuperAdminAuthModal] = useState({ isOpen: false, onSuccessCallback: null });
   const [superAdminInputPassword, setSuperAdminInputPassword] = useState('');
   const [showAuthInputPassword, setShowAuthInputPassword] = useState(false);
@@ -399,6 +400,21 @@ export default function AdminModal({
     }
   };
 
+  const handleToggleMasterPinVisibility = () => {
+    if (showMasterPin) {
+      setShowMasterPin(false);
+      return;
+    }
+
+    if (isSuperAdminUnlocked) {
+      setShowMasterPin(true);
+    } else {
+      triggerSuperAdminAuthModal(() => {
+        setShowMasterPin(true);
+      });
+    }
+  };
+
   const handleUnlockAllPasswords = () => {
     if (isSuperAdminUnlocked) {
       setRevealedUserIds(users.map(u => u.id));
@@ -413,6 +429,7 @@ export default function AdminModal({
     setIsSuperAdminUnlocked(false);
     setRevealedUserIds([]);
     setShowEditPassword(false);
+    setShowMasterPin(false);
   };
 
   const handleStartEditUser = (user) => {
@@ -474,9 +491,20 @@ export default function AdminModal({
       setTimeout(() => setMasterPinMsg(''), 3000);
       return;
     }
-    setMasterRecoveryPin(masterPin.trim());
-    setMasterPinMsg('🟢 PIN Master salvato con successo!');
-    setTimeout(() => setMasterPinMsg(''), 3500);
+
+    const doSave = () => {
+      setMasterRecoveryPin(masterPin.trim());
+      setMasterPinMsg('🟢 PIN Master salvato con successo!');
+      setTimeout(() => setMasterPinMsg(''), 3500);
+    };
+
+    if (isSuperAdminUnlocked) {
+      doSave();
+    } else {
+      triggerSuperAdminAuthModal(() => {
+        doSave();
+      });
+    }
   };
 
   // Backgrounds State
@@ -1818,19 +1846,27 @@ export default function AdminModal({
                   Questo codice ti permette di sbloccare o reimpostare qualsiasi password dalla schermata di login, <strong>anche offline e senza dover attendere l'email</strong>.
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <div className="relative">
+                  <div className="relative flex items-center">
                     <input
-                      type="text"
+                      type={showMasterPin ? "text" : "password"}
                       value={masterPin}
                       onChange={(e) => setMasterPin(e.target.value)}
-                      placeholder="Es. 8822"
-                      className="w-40 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 font-mono text-sm tracking-widest text-center"
+                      placeholder="PIN..."
+                      className="w-44 px-3 py-1.5 pr-9 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 font-mono text-sm tracking-widest text-center"
                     />
+                    <button
+                      type="button"
+                      onClick={handleToggleMasterPinVisibility}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition-colors p-0.5 cursor-pointer"
+                      title={showMasterPin ? "Nascondi PIN Master" : "Vedi PIN Master (richiede password Super Admin)"}
+                    >
+                      {showMasterPin ? <EyeOff className="w-4 h-4 text-cyan-400" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                   <button
                     type="button"
                     onClick={handleSaveMasterPin}
-                    className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs rounded-xl shadow transition-all active:scale-95"
+                    className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs rounded-xl shadow transition-all active:scale-95 cursor-pointer"
                   >
                     Salva Nuovo PIN Master
                   </button>
