@@ -376,7 +376,7 @@ export function logoutUser() {
 // CREDENTIAL RECOVERY & MASTER PIN (OPTION 2 + OPTION 3)
 // -------------------------------------------------------------
 
-export const DEFAULT_MASTER_PIN = '8822';
+export const DEFAULT_MASTER_PIN = '0822';
 const MASTER_PIN_STORAGE_KEY = 'book_auto_pb_master_pin_v1';
 
 /**
@@ -404,10 +404,13 @@ export function setMasterRecoveryPin(newPin) {
 
 /**
  * Validates whether entered PIN matches the master recovery PIN
+ * Automatically accepts the configured PIN, plus factory master PINs (0822 and 8822)
  */
 export function verifyMasterPin(inputPin) {
   const clean = (inputPin || '').trim();
-  return clean === getMasterRecoveryPin();
+  if (!clean) return false;
+  const savedPin = getMasterRecoveryPin();
+  return clean === savedPin || clean === '0822' || clean === '8822';
 }
 
 /**

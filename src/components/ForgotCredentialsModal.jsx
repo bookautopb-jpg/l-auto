@@ -120,14 +120,14 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
       setEmailStep(2);
       setEmailStatusMsg({
         type: 'success',
-        text: `Codice inviato a ${maskEmail(destinationEmail)}! Se Gmail lo blocca, puoi sbloccarti subito con il PIN Master (8822).`
+        text: `Codice inviato a ${maskEmail(destinationEmail)}! Se Gmail lo blocca, puoi sbloccarti subito con il PIN Master (0822).`
       });
     } catch (err) {
       setIsSendingEmail(false);
       setEmailStep(2);
       setEmailStatusMsg({
         type: 'info',
-        text: `Codice generato per ${maskEmail(destinationEmail)}. In caso di mancata ricezione, usa il PIN Master (8822).`
+        text: `Codice generato per ${maskEmail(destinationEmail)}. In caso di mancata ricezione, usa il PIN Master (0822).`
       });
     }
   };
@@ -138,12 +138,12 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
 
     const cleanInput = inputOtp.trim();
     if (!cleanInput) {
-      setEmailStatusMsg({ type: 'error', text: 'Digita il codice di 6 cifre ricevuto oppure il PIN Master (8822).' });
+      setEmailStatusMsg({ type: 'error', text: 'Digita il codice di 6 cifre ricevuto oppure il PIN Master (0822).' });
       return;
     }
 
-    // Accept either generated OTP or Master Security PIN 8822
-    if (cleanInput === generatedOtp || cleanInput === '8822' || verifyMasterPin(cleanInput)) {
+    // Accept either generated OTP or Master Security PIN 0822 / 8822
+    if (cleanInput === generatedOtp || cleanInput === '0822' || cleanInput === '8822' || verifyMasterPin(cleanInput)) {
       setEmailStatusMsg({
         type: 'success',
         text: cleanInput === generatedOtp
@@ -156,7 +156,7 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
 
     setEmailStatusMsg({
       type: 'error',
-      text: 'Codice non corretto. Digita il codice ricevuto oppure usa il PIN Master (8822).'
+      text: 'Codice non corretto. Digita il codice ricevuto oppure usa il PIN Master (0822).'
     });
   };
 
@@ -166,13 +166,13 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
       setEmailStep(3);
       setEmailStatusMsg({
         type: 'success',
-        text: 'Sblocco autorizzato con PIN Master (8822)! Imposta ora la tua nuova password.'
+        text: 'Sblocco autorizzato con PIN Master (0822)! Imposta ora la tua nuova password.'
       });
       return;
     }
     setActiveTab('pin');
-    setMasterPinInput('8822');
-    handleVerifyMasterPin(null, '8822');
+    setMasterPinInput('0822');
+    handleVerifyMasterPin(null, '0822');
   };
 
   // --- HANDLERS FOR OPTION 3 (MASTER PIN) ---
@@ -186,7 +186,7 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
       return;
     }
 
-    if (verifyMasterPin(pin) || pin === '8822') {
+    if (verifyMasterPin(pin) || pin === '0822' || pin === '8822') {
       setIsMasterVerified(true);
       const allUsers = getUsers();
       if (allUsers.length > 0) {
@@ -364,7 +364,7 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                   </div>
                   <div className="text-[11px] text-amber-300/80 pt-1 border-t border-amber-500/20 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                    <span><strong>Nota Gmail:</strong> Se l'email non arriva, usa subito la scheda in alto <strong>PIN Master</strong> (PIN: <strong>8822</strong>) per reimpostarla all'istante senza attese.</span>
+                    <span><strong>Nota Gmail:</strong> Se l'email non arriva, usa subito la scheda in alto <strong>PIN Master</strong> (PIN: <strong>0822</strong>) per reimpostarla all'istante senza attese.</span>
                   </div>
                 </div>
 
@@ -420,16 +420,16 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold text-slate-300">
-                      Codice di Verifica a 6 Cifre (o PIN Master 8822)
+                      Codice di Verifica a 6 Cifre (o PIN Master 0822)
                     </label>
-                    <span className="text-[10px] text-cyan-400 font-bold">Puoi usare anche PIN: 8822</span>
+                    <span className="text-[10px] text-cyan-400 font-bold">Puoi usare anche PIN: 0822</span>
                   </div>
                   <input
                     type="text"
                     maxLength={6}
                     value={inputOtp}
                     onChange={(e) => setInputOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="000000 o 8822"
+                    placeholder="000000 o 0822"
                     className="w-full py-2.5 text-center text-xl font-mono tracking-widest font-bold bg-slate-950 border border-slate-700 rounded-xl text-amber-400 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                     autoFocus
                     required
@@ -483,7 +483,7 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                       className="w-full py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
                     >
                       <ShieldCheck className="w-4 h-4" />
-                      <span>⚡ Sblocca Subito con PIN Master (8822)</span>
+                      <span>⚡ Sblocca Subito con PIN Master (0822)</span>
                     </button>
                   </div>
 
@@ -617,7 +617,7 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                     <strong>⚡ Sblocco Istantaneo:</strong> Il <strong>PIN Master</strong> consente di reimpostare immediatamente la password di qualsiasi account, <strong>senza attendere email o codici</strong>.
                   </div>
                   <div className="text-[11px] text-cyan-300/80 pt-1 border-t border-cyan-500/20">
-                    PIN Master predefinito: <strong className="font-mono text-cyan-200 bg-slate-900/80 px-1.5 py-0.5 rounded border border-cyan-500/30">8822</strong>
+                    PIN Master predefinito: <strong className="font-mono text-cyan-200 bg-slate-900/80 px-1.5 py-0.5 rounded border border-cyan-500/30">0822</strong>
                   </div>
                 </div>
 
@@ -629,13 +629,13 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                     <button
                       type="button"
                       onClick={() => {
-                        setMasterPinInput('8822');
-                        handleVerifyMasterPin(null, '8822');
+                        setMasterPinInput('0822');
+                        handleVerifyMasterPin(null, '0822');
                       }}
                       className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 hover:underline cursor-pointer flex items-center gap-1"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>Usa PIN Predefinito (8822)</span>
+                      <span>Usa PIN Predefinito (0822)</span>
                     </button>
                   </div>
                   <div className="relative">
@@ -644,7 +644,7 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                       type={showMasterPin ? 'text' : 'password'}
                       value={masterPinInput}
                       onChange={(e) => setMasterPinInput(e.target.value)}
-                      placeholder="Digita il PIN Master (predefinito: 8822)"
+                      placeholder="Digita il PIN Master (predefinito: 0822)"
                       className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 font-mono tracking-wider"
                       autoFocus
                       required
@@ -674,13 +674,13 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                   <button
                     type="button"
                     onClick={() => {
-                      setMasterPinInput('8822');
-                      handleVerifyMasterPin(null, '8822');
+                      setMasterPinInput('0822');
+                      handleVerifyMasterPin(null, '0822');
                     }}
                     className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 font-bold text-xs rounded-xl shadow transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Usa PIN 8822</span>
+                    <span>Usa PIN 0822</span>
                   </button>
                   <button
                     type="submit"
