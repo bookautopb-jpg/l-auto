@@ -1162,6 +1162,7 @@ export default function App() {
       {isAdminModalOpen && isStaffUser(currentUser) && (
         <AdminModal
           cars={cars}
+          currentUser={currentUser}
           onClose={() => setIsAdminModalOpen(false)}
           onOpenAddModal={() => { setCarToEdit(null); setIsAddModalOpen(true); }}
           onOpenBrandLogosModal={() => setIsBrandLogosModalOpen(true)}
