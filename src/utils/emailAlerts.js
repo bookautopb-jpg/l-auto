@@ -427,6 +427,15 @@ export function checkAndTriggerAutomaticEmailAlerts(cars = [], force = false) {
   return { autoTriggered: true, alerts: newMilestoneAlerts, targetEmail };
 }
 
+const DREAMHOST_MAIL_API = 'https://nisshi.dreamhosters.com/api/send_email.php';
+function getSendEmailApiUrl() {
+  if (typeof window === 'undefined') return DREAMHOST_MAIL_API;
+  if (window.location.hostname.includes('dreamhosters.com') || window.location.hostname.includes('nisshi')) {
+    return './api/send_email.php';
+  }
+  return DREAMHOST_MAIL_API;
+}
+
 /**
  * Send a 6-digit verification code OTP for credential recovery (Option 2)
  */
@@ -448,7 +457,32 @@ export async function sendPasswordRecoveryEmail(recipientEmail, userName, otpCod
     `Se non sei stato tu a richiedere il recupero, puoi ignorare questo messaggio: le tue credenziali attuali rimarranno invariate.\n\n` +
     `Distinti saluti,\nBook Auto PB Management`;
 
-  // 1. FORMSPREE
+  // 1. PRIMARY: Direct DreamHost Server Mail API (sends real email directly to targetEmail)
+  try {
+    const apiUrl = getSendEmailApiUrl();
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: targetEmail,
+        subject: subject,
+        message: messageBody,
+        otpCode: otpCode,
+        userName: userName,
+        username: loginUsername
+      })
+    });
+    if (res.ok) {
+      const json = await res.json().catch(() => null);
+      if (json && json.success) {
+        return { success: true, method: 'dreamhost_mail', targetEmail };
+      }
+    }
+  } catch (dhErr) {
+    console.warn('DreamHost mail error, trying fallback:', dhErr);
+  }
+
+  // 2. FORMSPREE Fallback
   if (savedConfig.provider === 'formspree') {
     const urlToUse = savedConfig.webhookUrl || DEFAULT_FORMSPREE_URL;
     const validation = validateFormspreeUrl(urlToUse);
@@ -476,7 +510,7 @@ export async function sendPasswordRecoveryEmail(recipientEmail, userName, otpCod
     }
   }
 
-  // 2. EMAILJS
+  // 3. EMAILJS Fallback
   if (savedConfig.provider === 'emailjs' && savedConfig.serviceId && savedConfig.templateId && savedConfig.publicKey) {
     try {
       const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -506,7 +540,7 @@ export async function sendPasswordRecoveryEmail(recipientEmail, userName, otpCod
     }
   }
 
-  // 3. Fallback: Mailto
+  // 4. Fallback: Mailto
   try {
     const mailtoUrl = `mailto:${encodeURIComponent(targetEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(messageBody)}`;
     window.location.href = mailtoUrl;

@@ -425,17 +425,45 @@ export default function ForgotCredentialsModal({ isOpen, onClose, onSuccessReset
                       setEmailStep(1);
                       setEmailStatusMsg({ type: '', text: '' });
                     }}
-                    className="w-1/3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all"
+                    className="w-1/3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all cursor-pointer"
                   >
                     Indietro
                   </button>
                   <button
                     type="submit"
-                    className="w-2/3 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
+                    className="w-2/3 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-95"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Verifica Codice</span>
                   </button>
+                </div>
+
+                {/* Helpful fallback if email is delayed */}
+                <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Non hai ricevuto il codice?</span>
+                    <button
+                      type="button"
+                      disabled={isSendingEmail}
+                      onClick={handleRequestEmailCode}
+                      className="text-amber-400 hover:text-amber-300 font-bold hover:underline transition-colors cursor-pointer"
+                    >
+                      {isSendingEmail ? 'Invio...' : 'Reinvia Codice Email'}
+                    </button>
+                  </div>
+
+                  <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-400">
+                      Vuoi procedere subito senza attendere l'email?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('pin')}
+                      className="px-2.5 py-1 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 font-bold text-[10px] rounded-lg transition-all shrink-0 cursor-pointer"
+                    >
+                      Usa PIN Master ➔
+                    </button>
+                  </div>
                 </div>
               </form>
             )}
