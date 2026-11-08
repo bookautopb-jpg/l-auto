@@ -1157,7 +1157,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="mt-16 border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
-        <p>© 2026 Book Auto PB</p>
+        <p>© {new Date().getFullYear()} Book Auto PB</p>
       </footer>
 
       {/* Modals */}
