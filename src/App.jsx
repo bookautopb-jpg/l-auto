@@ -296,16 +296,10 @@ export default function App() {
             const lc = localCars.find(l => String(l.id) === String(sc.id));
             if (!lc) return sc;
 
-            // Merge images so local uploaded photos are never lost if Supabase was slower to sync
+            // If local car has images, respect local images (preserves additions and deletions on this device)
             const scImgs = Array.isArray(sc.images) ? sc.images : [];
             const lcImgs = Array.isArray(lc.images) ? lc.images : [];
-            let mergedImgs = [...lcImgs];
-            scImgs.forEach(img => {
-              if (img && !mergedImgs.includes(img)) {
-                mergedImgs.push(img);
-              }
-            });
-            if (mergedImgs.length === 0 && scImgs.length > 0) mergedImgs = scImgs;
+            const finalImgs = lcImgs.length > 0 ? lcImgs : scImgs;
 
             const scDocs = Array.isArray(sc.documents) ? sc.documents : [];
             const lcDocs = Array.isArray(lc.documents) ? lc.documents : [];
@@ -337,10 +331,10 @@ export default function App() {
 
             return {
               ...sc,
-              images: mergedImgs,
-              carPhotos: mergedImgs,
-              mainPhoto: mergedImgs[0] || sc.mainPhoto || lc.mainPhoto,
-              pageImage: mergedImgs[0] || sc.pageImage || lc.pageImage,
+              images: finalImgs,
+              carPhotos: finalImgs,
+              mainPhoto: finalImgs[0] || sc.mainPhoto || lc.mainPhoto,
+              pageImage: finalImgs[0] || sc.pageImage || lc.pageImage,
               documents: mergedDocs
             };
           });
@@ -416,13 +410,7 @@ export default function App() {
 
             const prevImgs = Array.isArray(prevCar.images) ? prevCar.images : [];
             const scImgs = Array.isArray(sc.images) ? sc.images : [];
-            let mergedImgs = [...prevImgs];
-            scImgs.forEach(img => {
-              if (img && !mergedImgs.includes(img)) {
-                mergedImgs.push(img);
-              }
-            });
-            if (mergedImgs.length === 0 && scImgs.length > 0) mergedImgs = scImgs;
+            const finalImgs = prevImgs.length > 0 ? prevImgs : scImgs;
 
             const prevDocs = Array.isArray(prevCar.documents) ? prevCar.documents : [];
             const scDocs = Array.isArray(sc.documents) ? sc.documents : [];
@@ -438,10 +426,10 @@ export default function App() {
 
             return {
               ...sc,
-              images: mergedImgs,
-              carPhotos: mergedImgs,
-              mainPhoto: mergedImgs[0] || sc.mainPhoto || prevCar.mainPhoto,
-              pageImage: mergedImgs[0] || sc.pageImage || prevCar.pageImage,
+              images: finalImgs,
+              carPhotos: finalImgs,
+              mainPhoto: finalImgs[0] || sc.mainPhoto || prevCar.mainPhoto,
+              pageImage: finalImgs[0] || sc.pageImage || prevCar.pageImage,
               documents: mergedDocs
             };
           });
@@ -510,20 +498,12 @@ export default function App() {
         } else {
           const localCar = mergedCars[localIdx];
           
-          // Merge images: preserve all unique local and remote images
+          // Images: local car state is authoritative for its photo set!
+          // - When user uploads a new photo: localImgs has it, so it's kept and pushed to Cloud.
+          // - When user deletes a photo: localImgs does NOT have it, so the deleted photo stays deleted and is NEVER resurrected!
           const localImgs = Array.isArray(localCar.images) ? localCar.images : [];
           const remoteImgs = Array.isArray(remoteCar.images) ? remoteCar.images : [];
-          let mergedImages = [...localImgs];
-          remoteImgs.forEach(img => {
-            if (img && !mergedImages.includes(img)) {
-              mergedImages.push(img);
-            }
-          });
-          if (mergedImages.length === 0 && remoteImgs.length > 0) {
-            mergedImages = remoteImgs;
-          } else if (mergedImages.length === 0 && localImgs.length > 0) {
-            mergedImages = localImgs;
-          }
+          const finalImages = localImgs.length > 0 ? localImgs : remoteImgs;
 
           // Merge documents: keep all local and remote documents by ID
           const localDocs = Array.isArray(localCar.documents) ? localCar.documents : [];
@@ -536,10 +516,10 @@ export default function App() {
           mergedCars[localIdx] = {
             ...remoteCar,
             ...localCar, // Local edits take precedence
-            images: mergedImages,
-            carPhotos: mergedImages,
-            mainPhoto: mergedImages[0] || localCar.mainPhoto || remoteCar.mainPhoto,
-            pageImage: mergedImages[0] || localCar.pageImage || remoteCar.pageImage,
+            images: finalImages,
+            carPhotos: finalImages,
+            mainPhoto: finalImages[0] || localCar.mainPhoto || remoteCar.mainPhoto,
+            pageImage: finalImages[0] || localCar.pageImage || remoteCar.pageImage,
             documents: mergedDocs
           };
         }
