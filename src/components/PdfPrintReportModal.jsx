@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Printer, Image as ImageIcon, FileText, Download, Loader2, Type, Wrench, ShieldCheck, Calendar, Euro, Paperclip, Eye, FileCheck, Smartphone, ZoomIn, CheckSquare, Square, SlidersHorizontal, ChevronDown, ChevronUp, Car } from 'lucide-react';
+import { X, Printer, Image as ImageIcon, FileText, Download, Loader2, Type, Wrench, ShieldCheck, Calendar, Euro, Paperclip, Eye, FileCheck, Smartphone, ZoomIn, CheckSquare, Square, SlidersHorizontal, ChevronDown, ChevronUp, Car, User } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { PDFDocument } from 'pdf-lib';
@@ -35,6 +35,24 @@ export default function PdfPrintReportModal({
   const [includePhotos, setIncludePhotos] = useState(true);
   const [includeExtendedReport, setIncludeExtendedReport] = useState(false);
   const [includeDocuments, setIncludeDocuments] = useState(true);
+  const [includeOwner, setIncludeOwner] = useState(() => {
+    try {
+      const saved = localStorage.getItem('book_auto_pb_print_include_owner');
+      return saved === 'true'; // Defaults to false so user can print anonymously without owner
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleToggleOwner = () => {
+    setIncludeOwner(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('book_auto_pb_print_include_owner', String(next));
+      } catch (e) {}
+      return next;
+    });
+  };
 
   // Flat list of all documents attached across selected cars
   const allAttachedDocs = useMemo(() => {
@@ -669,6 +687,21 @@ export default function PdfPrintReportModal({
                     <span>+ Scheda Manutenzione</span>
                   </button>
 
+                  {/* Toggle Stampa Proprietario */}
+                  <button
+                    type="button"
+                    onClick={handleToggleOwner}
+                    className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                      includeOwner 
+                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
+                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                    title={includeOwner ? "Proprietario visibile sul foglio. Clicca per nasconderlo e stampare senza nome." : "Proprietario nascosto dal foglio di stampa. Clicca per mostrarlo."}
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>{includeOwner ? '✓ Con Proprietario' : 'Senza Proprietario'}</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -900,7 +933,7 @@ export default function PdfPrintReportModal({
 
                             {/* Specs List Lines */}
                             <div className="text-sm text-slate-900 space-y-1 pt-1 border-t border-slate-100" style={fontStyle}>
-                              {(car.proprietario || car.owner) && (
+                              {includeOwner && (car.proprietario || car.owner) && (
                                 <p className="leading-snug">
                                   <strong className="font-bold text-slate-950">Proprietario:</strong> {car.proprietario || car.owner}
                                 </p>
@@ -1134,7 +1167,9 @@ export default function PdfPrintReportModal({
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-slate-800">
                             <div><strong>Marca / Modello:</strong> {car.brand} {car.model}</div>
-                            <div><strong>Proprietario:</strong> {car.proprietario || car.owner || 'N/D'}</div>
+                            {includeOwner && (car.proprietario || car.owner) && (
+                              <div><strong>Proprietario:</strong> {car.proprietario || car.owner}</div>
+                            )}
                             <div><strong>Anno Immatricolazione:</strong> {car.immatricolazione || 'N/D'}</div>
                             <div><strong>Targa Veicolo:</strong> {car.targa || 'N/D'}</div>
                             <div><strong>N° Telaio (VIN):</strong> {car.chassis || 'N/D'}</div>
