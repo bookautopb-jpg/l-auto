@@ -35,7 +35,7 @@ export default function AppGuideModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('overview');
 
   const tabs = [
-    { id: 'overview', label: '1. In Parole Semplici', icon: Sparkles },
+    { id: 'overview', label: '1. Panoramica Generale', icon: Sparkles },
     { id: 'roles', label: '2. Categorie & Admin', icon: ShieldCheck },
     { id: 'catalog', label: '3. Ricerca & Filtri', icon: Search },
     { id: 'carDetail', label: '4. Scheda Auto & Dati Esempio', icon: Car },
@@ -116,12 +116,10 @@ export default function AppGuideModal({ onClose }) {
             <div className="space-y-6 animate-fade-in">
               <div className="p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl">
                 <h3 className="text-base sm:text-lg font-bold text-amber-300 flex items-center space-x-2">
-                  <span>🚗 Che cos'è Book Auto PB? (Spiegato come a un bambino)</span>
+                  <span>🚗 Che cos'è Book Auto PB? Panoramica Generale</span>
                 </h3>
                 <p className="mt-2 text-slate-200 text-sm sm:text-base">
-                  Immagina di avere una <strong>scatola magica per tutte le tue automobili</strong>. 
-                  Invece di avere fogli di carta sparsi nei cassetti, libretti smarriti e foto nel telefono, 
-                  <strong> Book Auto PB</strong> tiene tutto in ordine in un unico posto bellissimo:
+                  <strong>Book Auto PB</strong> è l'archivio digitale completo per la gestione della tua collezione di vetture:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 text-xs">
                   <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-700/60">
@@ -578,3 +576,4 @@ export default function AppGuideModal({ onClose }) {
     </div>
   );
 }
+

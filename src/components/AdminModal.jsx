@@ -32,7 +32,8 @@ import {
   Euro,
   Search,
   Filter,
-  AlertCircle
+  AlertCircle,
+  HelpCircle
 } from 'lucide-react';
 import { 
   getUsers, 
@@ -83,7 +84,8 @@ export default function AdminModal({
   showExpirationBar,
   setShowExpirationBar,
   clientPermissions,
-  onPermissionsUpdated
+  onPermissionsUpdated,
+  onOpenGuideModal
 }) {
   useBodyScrollLock(true);
   const [activeTab, setActiveTab] = useState('tools'); // 'tools' | 'permissions' | 'users' | 'backgrounds' | 'locations' | 'documents'
@@ -922,6 +924,21 @@ export default function AdminModal({
                       <span className="text-[10px] text-slate-400">{docStats.totalDocs} file salvati</span>
                     </div>
                   </button>
+
+                  {onOpenGuideModal && (
+                    <button
+                      onClick={() => { onClose(); onOpenGuideModal(); }}
+                      className="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 rounded-xl text-left flex items-center space-x-3 transition-all"
+                    >
+                      <div className="p-2 bg-amber-500/10 text-amber-400 rounded-lg">
+                        <HelpCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="block font-bold text-slate-100">Guida & Manuale (?)</span>
+                        <span className="text-[10px] text-slate-400">Tutte le funzioni e ruoli</span>
+                      </div>
+                    </button>
+                  )}
                 </div>
               </div>
 

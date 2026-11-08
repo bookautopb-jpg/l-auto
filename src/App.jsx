@@ -1289,6 +1289,7 @@ export default function App() {
             saveClientPermissions(updated);
             syncPermissionsToSupabase(updated);
           }}
+          onOpenGuideModal={() => setIsGuideModalOpen(true)}
         />
       )}
 
