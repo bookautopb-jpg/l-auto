@@ -10,22 +10,19 @@ export default function StatsBar({
   locations = [],
   selectedLocation = 'Tutti',
   setSelectedLocation,
-  owners = [],
-  selectedOwner = 'Tutti',
-  setSelectedOwner,
   totalCarsCount,
   filteredCount
 }) {
   return (
-    <div className="space-y-3 mb-6">
+    <div className="space-y-1.5 mb-2.5">
       {/* Brand Horizontal Filter Chips */}
       <div className="relative">
-        <div className="flex items-center space-x-2 overflow-x-auto px-2 py-2.5 -mx-2 no-scrollbar scroll-smooth">
+        <div className="flex items-center space-x-1.5 overflow-x-auto px-1 py-1 -mx-1 no-scrollbar scroll-smooth">
           <button
             onClick={() => setSelectedBrand('Tutti')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
+            className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
               selectedBrand === 'Tutti'
-                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 scale-105'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
                 : 'bg-slate-900/80 text-slate-300 border-slate-700/80 hover:bg-slate-800 hover:text-white'
             }`}
           >
@@ -40,9 +37,9 @@ export default function StatsBar({
               <button
                 key={brand}
                 onClick={() => setSelectedBrand(brand)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border shrink-0 flex items-center space-x-1.5 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 flex items-center space-x-1.5 ${
                   isSelected
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-md shadow-amber-500/10 scale-105'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
                     : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
                 }`}
               >
@@ -60,7 +57,7 @@ export default function StatsBar({
 
       {/* Location / Garage Horizontal Filter Chips (if locations exist) */}
       {locations.length > 0 && setSelectedLocation && (
-        <div className="flex items-center space-x-2 overflow-x-auto px-2 py-2 -mx-2 no-scrollbar scroll-smooth border-t border-slate-800/60">
+        <div className="flex items-center space-x-1.5 overflow-x-auto px-1 py-1 -mx-1 no-scrollbar scroll-smooth border-t border-slate-800/60">
           <div className="flex items-center space-x-1 text-slate-400 text-xs font-bold shrink-0 pr-1">
             <MapPin className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Garage:</span>
@@ -68,7 +65,7 @@ export default function StatsBar({
 
           <button
             onClick={() => setSelectedLocation('Tutti')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 ${
               selectedLocation === 'Tutti'
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
                 : 'bg-slate-900/50 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
@@ -87,60 +84,13 @@ export default function StatsBar({
               <button
                 key={loc}
                 onClick={() => setSelectedLocation(loc)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 flex items-center space-x-1.5 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 flex items-center space-x-1.5 ${
                   isSelected
-                    ? 'bg-amber-500/30 text-amber-200 border-amber-400 shadow-md scale-105'
+                    ? 'bg-amber-500/30 text-amber-200 border-amber-400 shadow-sm'
                     : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
                 }`}
               >
                 <span>{loc}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  isSelected ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Owners Horizontal Filter Chips */}
-      {owners.length > 0 && setSelectedOwner && (
-        <div className="flex items-center space-x-2 overflow-x-auto px-2 py-2 -mx-2 no-scrollbar scroll-smooth border-t border-slate-800/60">
-          <div className="flex items-center space-x-1 text-slate-400 text-xs font-bold shrink-0 pr-1">
-            <User className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Proprietario:</span>
-          </div>
-
-          <button
-            onClick={() => setSelectedOwner('Tutti')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 ${
-              selectedOwner === 'Tutti'
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
-                : 'bg-slate-900/50 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
-            }`}
-          >
-            Tutti i Proprietari
-          </button>
-
-          {owners.map(owner => {
-            const count = cars.filter(c => {
-              const carOwner = (c.proprietario || c.owner || '').trim().replace(/\s+/g, ' ').toLowerCase();
-              return carOwner === owner.trim().replace(/\s+/g, ' ').toLowerCase();
-            }).length;
-            const isSelected = selectedOwner.trim().toLowerCase() === owner.trim().toLowerCase();
-            return (
-              <button
-                key={owner}
-                onClick={() => setSelectedOwner(owner)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 flex items-center space-x-1.5 ${
-                  isSelected
-                    ? 'bg-amber-500/30 text-amber-200 border-amber-400 shadow-md scale-105'
-                    : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
-                }`}
-              >
-                <span>{owner}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   isSelected ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400'
                 }`}>

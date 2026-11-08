@@ -13,7 +13,7 @@ import AdminModal from './components/AdminModal';
 import AdminLoginPage from './components/AdminLoginPage';
 import AutoEmailNotificationPopup from './components/AutoEmailNotificationPopup';
 import CartellaDocumentiModal from './components/CartellaDocumentiModal';
-import { SlidersHorizontal, ArrowUpDown, Plus, RotateCcw, Car as CarIcon, Sparkles, CheckSquare, Printer, Square, Trash2, Bell } from 'lucide-react';
+import { SlidersHorizontal, ArrowUpDown, Plus, RotateCcw, Car as CarIcon, Sparkles, CheckSquare, Printer, Square, Trash2, Bell, User } from 'lucide-react';
 import { getLogoForBrand, getCustomBrandLogos, DEFAULT_BRAND_LOGOS, isValidBrandLogo, getCanonicalBrandName, normalizeBrandName } from './utils/brandLogos';
 import { getVehicleExpirations } from './utils/notifications';
 import { getCurrentUser, setCurrentUser as setCurrentUserInStorage, logoutUser, syncUsersWithCloud, syncBackgroundsWithCloud } from './utils/auth';
@@ -965,9 +965,9 @@ export default function App() {
       )}
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1 w-full">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-3 flex-1 w-full">
         
-        {/* Brand, Location & Owner Filter Chips */}
+        {/* Brand & Location Filter Chips */}
         <StatsBar
           cars={cars}
           brands={brands}
@@ -976,15 +976,12 @@ export default function App() {
           locations={locations}
           selectedLocation={selectedLocation}
           setSelectedLocation={setSelectedLocation}
-          owners={owners}
-          selectedOwner={selectedOwner}
-          setSelectedOwner={setSelectedOwner}
           totalCarsCount={cars.length}
           filteredCount={filteredCars.length}
         />
 
-        {/* Toolbar Header (Sort, Selection Actions & Counter) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+        {/* Toolbar Header (Sort, Owner Dropdown, Selection Actions & Counter) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-2.5 border-b border-slate-800">
           
           <div className="flex items-center space-x-3 flex-wrap gap-y-2">
             <div className="flex items-center space-x-2">
@@ -1037,20 +1034,73 @@ export default function App() {
 
           </div>
 
-          {/* Sort Control */}
-          <div className="flex items-center space-x-2 text-xs">
-            <ArrowUpDown className="w-4 h-4 text-slate-400" />
-            <span className="text-slate-400 font-medium">Ordina per:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-            >
-              <option value="page">Ordine Predefinito</option>
-              <option value="brand">Marca (A-Z)</option>
-              <option value="hp_desc">Potenza (CV Decrescente)</option>
-              <option value="year_desc">Anno (Più Recente)</option>
-            </select>
+          {/* Right Toolbar Controls: Proprietario & Ordina per */}
+          <div className="flex items-center space-x-3 text-xs flex-wrap gap-y-2">
+            
+            {/* Proprietario Dropdown Menu */}
+            {owners && owners.length > 0 && (
+              <div className="flex items-center space-x-1.5">
+                <User className={`w-3.5 h-3.5 ${selectedOwner !== 'Tutti' ? 'text-amber-400' : 'text-slate-400'}`} />
+                <span className="text-slate-400 font-medium hidden md:inline">Proprietario:</span>
+                <div className="relative inline-flex items-center">
+                  <select
+                    value={selectedOwner}
+                    onChange={(e) => setSelectedOwner(e.target.value)}
+                    className={`text-xs font-semibold rounded-xl px-2.5 py-1.5 pr-7 focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none cursor-pointer border transition-all ${
+                      selectedOwner !== 'Tutti'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-sm'
+                        : 'bg-slate-900 border-slate-700 text-slate-200 hover:border-slate-600'
+                    }`}
+                  >
+                    <option value="Tutti" className="bg-slate-900 text-slate-200">
+                      Tutti i Proprietari ({cars.length})
+                    </option>
+                    {owners.map(owner => {
+                      const count = cars.filter(c => {
+                        const carOwner = (c.proprietario || c.owner || '').trim().replace(/\s+/g, ' ').toLowerCase();
+                        return carOwner === owner.trim().replace(/\s+/g, ' ').toLowerCase();
+                      }).length;
+                      return (
+                        <option key={owner} value={owner} className="bg-slate-900 text-slate-200">
+                          {owner} ({count})
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {selectedOwner !== 'Tutti' ? (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); setSelectedOwner('Tutti'); }}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-amber-400 hover:text-amber-200 p-0.5 rounded-full"
+                      title="Azzera filtro proprietario"
+                    >
+                      ✕
+                    </button>
+                  ) : (
+                    <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
+                      ▼
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sort Control */}
+            <div className="flex items-center space-x-1.5">
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-slate-400 font-medium hidden md:inline">Ordina per:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
+              >
+                <option value="page">Ordine Predefinito</option>
+                <option value="brand">Marca (A-Z)</option>
+                <option value="hp_desc">Potenza (CV Decrescente)</option>
+                <option value="year_desc">Anno (Più Recente)</option>
+              </select>
+            </div>
+
           </div>
         </div>
 
