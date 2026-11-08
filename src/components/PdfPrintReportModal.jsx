@@ -54,6 +54,25 @@ export default function PdfPrintReportModal({
     });
   };
 
+  const [includeNotes, setIncludeNotes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('book_auto_pb_print_include_notes');
+      return saved !== 'false'; // Defaults to true
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const handleToggleNotes = () => {
+    setIncludeNotes(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('book_auto_pb_print_include_notes', String(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
   // Flat list of all documents attached across selected cars
   const allAttachedDocs = useMemo(() => {
     return (selectedCars || []).flatMap(c => (c.documents || []).map(d => ({ car: c, doc: d })));
@@ -702,6 +721,21 @@ export default function PdfPrintReportModal({
                     <span>{includeOwner ? '✓ Con Proprietario' : 'Senza Proprietario'}</span>
                   </button>
 
+                  {/* Toggle Stampa Note */}
+                  <button
+                    type="button"
+                    onClick={handleToggleNotes}
+                    className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                      includeNotes 
+                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
+                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                    title={includeNotes ? "Note visibili sul foglio. Clicca per nasconderle e stampare senza note." : "Note nascoste dal foglio di stampa. Clicca per mostrarle."}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>{includeNotes ? '✓ Con Note' : 'Senza Note'}</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -968,7 +1002,7 @@ export default function PdfPrintReportModal({
                                 </p>
                               )}
 
-                              {car.notes && (
+                              {includeNotes && car.notes && (
                                 <p className="pt-1 italic text-slate-700 font-sans text-xs">
                                   <strong className="font-bold not-italic text-slate-950" style={fontStyle}>Note:</strong> {car.notes}
                                 </p>
@@ -1276,7 +1310,7 @@ export default function PdfPrintReportModal({
                               <span className="font-bold text-slate-900">{formatCurrency(car.costiManutenzioneAnnua)}</span>
                             </div>
                           </div>
-                          {car.noteAnomalie && (
+                          {includeNotes && car.noteAnomalie && (
                             <div className="pt-1.5 border-t border-slate-200 text-slate-700">
                               <strong>Note, Diario di Viaggio & Rumori Anomalie:</strong>
                               <p className="mt-0.5 text-slate-700 bg-white p-2 rounded border border-slate-200 italic">
