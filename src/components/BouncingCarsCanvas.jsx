@@ -3,7 +3,8 @@ import React, { useEffect, useRef } from 'react';
 /**
  * BouncingCarsCanvas Component
  * Renders a sleek supercar continuously and smoothly cruising around the perimeter
- * of the central Login Card like an elegant racetrack, fully responsive on mobile, tablet, and desktop.
+ * of the central Login Card. Flashes dynamic high beams ("abbaglianti") when approaching
+ * and taking corners, fully responsive on mobile, tablet, and desktop without any dashed track line.
  */
 export default function BouncingCarsCanvas({ cardRef }) {
   const canvasRef = useRef(null);
@@ -33,7 +34,7 @@ export default function BouncingCarsCanvas({ cardRef }) {
     let lastTime = performance.now();
     const trails = [];
 
-    // Helper: Compute (x, y, angle) along rounded rectangle racetrack
+    // Helper: Compute (x, y, angle, isCorner) along rounded rectangle perimeter
     const getTrackPosition = (dist, left, top, right, bottom, r) => {
       const L_top = Math.max(10, (right - r) - (left + r));
       const L_right = Math.max(10, (bottom - r) - (top + r));
@@ -109,11 +110,20 @@ export default function BouncingCarsCanvas({ cardRef }) {
         angle = a + Math.PI / 2;
       }
 
-      return { x, y, angle, totalPerimeter };
+      // Detect corner proximity (lead-in just before entering corner and throughout the curve)
+      const cornerLead = 24;
+      const cornerTail = 12;
+      const inC1 = (d >= L_top - cornerLead) && (d < L_top + L_arc + cornerTail);
+      const inC2 = (d >= L_top + L_arc + L_right - cornerLead) && (d < L_top + L_arc + L_right + L_arc + cornerTail);
+      const inC3 = (d >= L_top + L_arc + L_right + L_arc + L_bottom - cornerLead) && (d < L_top + L_arc + L_right + L_arc + L_bottom + L_arc + cornerTail);
+      const inC4 = (d >= L_top + L_arc + L_right + L_arc + L_bottom + L_arc + L_left - cornerLead) || (d < cornerTail);
+      const isCorner = inC1 || inC2 || inC3 || inC4;
+
+      return { x, y, angle, isCorner, totalPerimeter };
     };
 
-    // Helper: Draw sleek Vector Supercar
-    const drawSupercar = (x, y, angle, mobile) => {
+    // Helper: Draw sleek Vector Supercar with High Beams ("abbaglianti") in corners
+    const drawSupercar = (x, y, angle, mobile, isCorner, now) => {
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(angle);
@@ -198,26 +208,60 @@ export default function BouncingCarsCanvas({ cardRef }) {
       ctx.fillRect(-w / 3 - 1, -h / 2 - 1.5, wheelW - 3, wheelH - 1.5);
       ctx.fillRect(-w / 3 - 1, h / 2 - 1.5, wheelW - 3, wheelH - 1.5);
 
-      // 6. Dual LED Xenon Headlights + Forward Light Cones
-      ctx.shadowColor = '#ffffff';
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(w / 2 - 2, -h / 3, 2.5, 2.5);
-      ctx.fillRect(w / 2 - 2, h / 3 - 2.5, 2.5, 2.5);
+      // 6. Headlights & High Beams ("Abbaglianti" in curves)
+      // Rapid pulse flash modulation when entering and taking corners
+      const flashPulse = Math.sin(now * 0.035);
+      const isFlashHigh = flashPulse > 0.1;
+      const highBeamActive = isCorner && isFlashHigh;
 
-      const beamGrad = ctx.createRadialGradient(w / 2 + 15, 0, 2, w / 2 + 25, 0, mobile ? 45 : 65);
-      beamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-      beamGrad.addColorStop(0.4, 'rgba(245, 158, 11, 0.2)');
-      beamGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      const beamLength = highBeamActive
+        ? (mobile ? 90 : 135)
+        : (isCorner ? (mobile ? 65 : 95) : (mobile ? 45 : 65));
+      const beamSpread = highBeamActive ? h * 1.35 : (isCorner ? h * 1.15 : h * 0.9);
+
+      // Dual LED bulbs
+      ctx.shadowColor = highBeamActive ? '#67e8f9' : '#ffffff';
+      ctx.shadowBlur = highBeamActive ? (mobile ? 18 : 26) : 8;
+      ctx.fillStyle = highBeamActive ? '#ffffff' : '#f8fafc';
+      ctx.fillRect(w / 2 - 2, -h / 3, 3, 3);
+      ctx.fillRect(w / 2 - 2, h / 3 - 3, 3, 3);
+
+      // Light Cone Beam Projection
+      const beamGrad = ctx.createRadialGradient(w / 2 + 15, 0, 2, w / 2 + beamLength * 0.45, 0, beamLength);
+      if (highBeamActive) {
+        beamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+        beamGrad.addColorStop(0.2, 'rgba(186, 230, 253, 0.6)');
+        beamGrad.addColorStop(0.5, 'rgba(245, 158, 11, 0.35)');
+        beamGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      } else {
+        beamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+        beamGrad.addColorStop(0.4, 'rgba(245, 158, 11, 0.2)');
+        beamGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      }
 
       ctx.fillStyle = beamGrad;
       ctx.beginPath();
       ctx.moveTo(w / 2, -h / 3);
-      ctx.lineTo(w / 2 + (mobile ? 45 : 65), -h * 0.9);
-      ctx.lineTo(w / 2 + (mobile ? 45 : 65), h * 0.9);
+      ctx.lineTo(w / 2 + beamLength, -beamSpread);
+      ctx.lineTo(w / 2 + beamLength, beamSpread);
       ctx.lineTo(w / 2, h / 3);
       ctx.closePath();
       ctx.fill();
+
+      // Xenon Starburst Flare when high beams flash
+      if (highBeamActive) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 1;
+        const flareSize = mobile ? 5 : 7;
+        [-h / 3 + 1, h / 3 - 1].forEach(yPos => {
+          ctx.beginPath();
+          ctx.moveTo(w / 2 - flareSize, yPos);
+          ctx.lineTo(w / 2 + flareSize, yPos);
+          ctx.moveTo(w / 2, yPos - flareSize);
+          ctx.lineTo(w / 2, yPos + flareSize);
+          ctx.stroke();
+        });
+      }
 
       // 7. Red LED Taillights
       ctx.shadowColor = '#ef4444';
@@ -263,23 +307,13 @@ export default function BouncingCarsCanvas({ cardRef }) {
       // Card rounded border radius (rounded-3xl is 24px)
       const r = 24 + offset;
 
-      // 2. Subtle racetrack guide path (very soft neon glow)
-      ctx.save();
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.15)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 6]);
-      ctx.beginPath();
-      ctx.roundRect(cLeft, cTop, cRight - cLeft, cBottom - cTop, r);
-      ctx.stroke();
-      ctx.restore();
-
-      // 3. Advance car along track
+      // 2. Advance car along track
       const speed = mobile ? 1.7 : 2.1; // Smooth cruising speed
       distance += speed * (dt / 16.666);
 
-      const { x, y, angle } = getTrackPosition(distance, cLeft, cTop, cRight, cBottom, r);
+      const { x, y, angle, isCorner } = getTrackPosition(distance, cLeft, cTop, cRight, cBottom, r);
 
-      // 4. Subtle glowing light trail behind the car
+      // 3. Subtle glowing light trail behind the car
       trails.push({ x, y, alpha: 0.35 });
       if (trails.length > (mobile ? 10 : 16)) trails.shift();
 
@@ -291,8 +325,8 @@ export default function BouncingCarsCanvas({ cardRef }) {
         ctx.fill();
       });
 
-      // 5. Draw the Supercar
-      drawSupercar(x, y, angle, mobile);
+      // 4. Draw the Supercar with dynamic corner high beams
+      drawSupercar(x, y, angle, mobile, isCorner, now);
 
       animationFrameId = requestAnimationFrame(render);
     };
