@@ -13,7 +13,8 @@ import {
   Maximize2, 
   Trash2, 
   MapPin, 
-  Bell 
+  Bell,
+  User 
 } from 'lucide-react';
 import { getVehicleExpirations } from '../utils/notifications';
 import { isStaffUser, canViewExpirations, canViewChassis, canViewLocation } from '../utils/permissions';
@@ -234,6 +235,15 @@ export default function CarCard({
           <div className="text-[11px] font-medium text-amber-300 truncate bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20 flex items-center space-x-1">
             <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
             <span className="truncate">{car.location}</span>
+          </div>
+        )}
+
+        {/* Proprietario Snippet */}
+        {(car.proprietario || car.owner) && (
+          <div className="text-[11px] font-medium text-slate-200 truncate bg-slate-900/90 px-2 py-1 rounded border border-slate-700/80 flex items-center space-x-1.5 shadow-sm">
+            <User className="w-3 h-3 text-amber-400 shrink-0" />
+            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Proprietario:</span>
+            <span className="truncate font-bold text-amber-300">{car.proprietario || car.owner}</span>
           </div>
         )}
 

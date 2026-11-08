@@ -476,6 +476,56 @@ export async function syncLocationsToSupabase(locations) {
   }
 }
 
+// Fetch Owners from Supabase Cloud
+export async function fetchOwnersFromSupabase(timeoutMs = 6000) {
+  if (!supabase) return null;
+  try {
+    const fetchPromise = supabase
+      .from('cars')
+      .select('notes')
+      .eq('id', '__app_owners__')
+      .maybeSingle();
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Supabase owners timed out')), timeoutMs)
+    );
+
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+    if (error || !data || !data.notes) return null;
+
+    try {
+      const parsed = JSON.parse(data.notes);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    } catch (parseErr) {
+      return null;
+    }
+  } catch (e) {
+    return null;
+  }
+}
+
+// Sync Owners to Supabase Cloud
+export async function syncOwnersToSupabase(owners) {
+  if (!supabase || !Array.isArray(owners) || owners.length === 0) return false;
+  try {
+    const payload = {
+      id: '__app_owners__',
+      brand: 'SYSTEM',
+      model: 'APP_OWNERS',
+      notes: JSON.stringify(owners)
+    };
+    const { error } = await supabase.from('cars').upsert(payload, { onConflict: 'id' });
+    if (error) {
+      console.error('Supabase sync owners error:', error);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Supabase sync owners exception:', e);
+    return false;
+  }
+}
+
 // Fetch Backgrounds from Supabase Cloud
 export async function fetchBackgroundsFromSupabase(timeoutMs = 6000) {
   if (!supabase) return null;

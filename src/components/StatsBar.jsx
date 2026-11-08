@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Zap, Sparkles, Trophy, Award, Layers, MapPin } from 'lucide-react';
+import { Shield, Zap, Sparkles, Trophy, Award, Layers, MapPin, User } from 'lucide-react';
 import { normalizeBrandName } from '../utils/brandLogos';
 
 export default function StatsBar({ 
@@ -10,6 +10,9 @@ export default function StatsBar({
   locations = [],
   selectedLocation = 'Tutti',
   setSelectedLocation,
+  owners = [],
+  selectedOwner = 'Tutti',
+  setSelectedOwner,
   totalCarsCount,
   filteredCount
 }) {
@@ -91,6 +94,53 @@ export default function StatsBar({
                 }`}
               >
                 <span>{loc}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isSelected ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Owners Horizontal Filter Chips */}
+      {owners.length > 0 && setSelectedOwner && (
+        <div className="flex items-center space-x-2 overflow-x-auto px-2 py-2 -mx-2 no-scrollbar scroll-smooth border-t border-slate-800/60">
+          <div className="flex items-center space-x-1 text-slate-400 text-xs font-bold shrink-0 pr-1">
+            <User className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Proprietario:</span>
+          </div>
+
+          <button
+            onClick={() => setSelectedOwner('Tutti')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 ${
+              selectedOwner === 'Tutti'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                : 'bg-slate-900/50 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+            }`}
+          >
+            Tutti i Proprietari
+          </button>
+
+          {owners.map(owner => {
+            const count = cars.filter(c => {
+              const carOwner = (c.proprietario || c.owner || '').trim().replace(/\s+/g, ' ').toLowerCase();
+              return carOwner === owner.trim().replace(/\s+/g, ' ').toLowerCase();
+            }).length;
+            const isSelected = selectedOwner.trim().toLowerCase() === owner.trim().toLowerCase();
+            return (
+              <button
+                key={owner}
+                onClick={() => setSelectedOwner(owner)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 flex items-center space-x-1.5 ${
+                  isSelected
+                    ? 'bg-amber-500/30 text-amber-200 border-amber-400 shadow-md scale-105'
+                    : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                <span>{owner}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   isSelected ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400'
                 }`}>

@@ -40,7 +40,8 @@
     "scadenzaBollo": "",
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
-    "prossimoTagliandoData": ""
+    "prossimoTagliandoData": "",
+    "proprietario": ""
   },
   {
     "id": "car_2",
@@ -73,7 +74,8 @@
     "scadenzaAssicurazione": "08/01/2027",
     "scadenzaRevisione": "08/11/2026",
     "prossimoTagliandoData": "29/10/2026",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_3",
@@ -114,7 +116,8 @@
     "scadenzaBollo": "",
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
-    "prossimoTagliandoData": ""
+    "prossimoTagliandoData": "",
+    "proprietario": ""
   },
   {
     "id": "car_4",
@@ -149,7 +152,8 @@
     "scadenzaBollo": "",
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
-    "prossimoTagliandoData": ""
+    "prossimoTagliandoData": "",
+    "proprietario": ""
   },
   {
     "id": "car_5",
@@ -182,7 +186,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_6",
@@ -216,7 +221,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_7",
@@ -249,7 +255,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_8",
@@ -282,7 +289,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_9",
@@ -315,7 +323,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_10",
@@ -348,7 +357,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_11",
@@ -381,7 +391,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_12",
@@ -414,7 +425,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_13",
@@ -445,7 +457,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_14",
@@ -478,7 +491,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_15",
@@ -511,7 +525,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_16",
@@ -544,7 +559,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_17",
@@ -574,7 +590,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_18",
@@ -607,7 +624,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_19",
@@ -640,7 +658,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_20",
@@ -673,7 +692,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_21",
@@ -706,7 +726,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_22",
@@ -739,7 +760,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_23",
@@ -772,7 +794,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_24",
@@ -805,7 +828,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_25",
@@ -838,7 +862,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_26",
@@ -871,7 +896,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_27",
@@ -904,7 +930,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_28",
@@ -937,7 +964,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_29",
@@ -966,7 +994,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_30",
@@ -999,7 +1028,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_31",
@@ -1032,7 +1062,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_32",
@@ -1065,7 +1096,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_33",
@@ -1092,7 +1124,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_34",
@@ -1125,7 +1158,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_35",
@@ -1158,7 +1192,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_36",
@@ -1191,7 +1226,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_37",
@@ -1224,7 +1260,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_38",
@@ -1257,7 +1294,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_39",
@@ -1290,7 +1328,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_40",
@@ -1323,7 +1362,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_41",
@@ -1356,7 +1396,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_42",
@@ -1389,7 +1430,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_43",
@@ -1422,7 +1464,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_44",
@@ -1455,7 +1498,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_45",
@@ -1488,7 +1532,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_46",
@@ -1521,7 +1566,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_47",
@@ -1554,7 +1600,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_48",
@@ -1587,7 +1634,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_49",
@@ -1618,7 +1666,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_50",
@@ -1651,7 +1700,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_51",
@@ -1684,7 +1734,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_52",
@@ -1711,7 +1762,8 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   },
   {
     "id": "car_53",
@@ -1744,6 +1796,7 @@
     "scadenzaAssicurazione": "",
     "scadenzaRevisione": "",
     "prossimoTagliandoData": "",
-    "documents": []
+    "documents": [],
+    "proprietario": ""
   }
 ]

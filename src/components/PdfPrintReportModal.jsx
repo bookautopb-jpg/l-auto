@@ -900,6 +900,11 @@ export default function PdfPrintReportModal({
 
                             {/* Specs List Lines */}
                             <div className="text-sm text-slate-900 space-y-1 pt-1 border-t border-slate-100" style={fontStyle}>
+                              {(car.proprietario || car.owner) && (
+                                <p className="leading-snug">
+                                  <strong className="font-bold text-slate-950">Proprietario:</strong> {car.proprietario || car.owner}
+                                </p>
+                              )}
                               {car.immatricolazione && (
                                 <p className="leading-snug">
                                   <strong className="font-bold text-slate-950">Immatricolazione:</strong> {car.immatricolazione}
@@ -1129,6 +1134,7 @@ export default function PdfPrintReportModal({
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-slate-800">
                             <div><strong>Marca / Modello:</strong> {car.brand} {car.model}</div>
+                            <div><strong>Proprietario:</strong> {car.proprietario || car.owner || 'N/D'}</div>
                             <div><strong>Anno Immatricolazione:</strong> {car.immatricolazione || 'N/D'}</div>
                             <div><strong>Targa Veicolo:</strong> {car.targa || 'N/D'}</div>
                             <div><strong>N° Telaio (VIN):</strong> {car.chassis || 'N/D'}</div>

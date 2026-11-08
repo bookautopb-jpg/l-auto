@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Eye, Edit3, Calendar, Zap, Gauge, Award, Trash2, MapPin, Bell } from 'lucide-react';
+import { Heart, Eye, Edit3, Calendar, Zap, Gauge, Award, Trash2, MapPin, Bell, User } from 'lucide-react';
 import { getVehicleExpirations } from '../utils/notifications';
 import { isStaffUser, canViewExpirations, canViewChassis, canViewLocation } from '../utils/permissions';
 
@@ -37,6 +37,7 @@ export default function CarListView({
                 />
               </th>
               <th className="py-3.5 px-4">Vettura</th>
+              <th className="py-3.5 px-4">Proprietario</th>
               <th className="py-3.5 px-4">Ubicazione / Garage</th>
               <th className="py-3.5 px-4">Immatricolazione</th>
               <th className="py-3.5 px-4">Telaio (VIN)</th>
@@ -92,6 +93,18 @@ export default function CarListView({
                         </div>
                       </div>
                     </div>
+                  </td>
+
+                  {/* Proprietario */}
+                  <td className="py-3 px-4 text-amber-300 font-semibold text-xs whitespace-nowrap">
+                    {(car.proprietario || car.owner) ? (
+                      <span className="inline-flex items-center space-x-1.5 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 text-amber-300">
+                        <User className="w-3 h-3 text-amber-400 shrink-0" />
+                        <span>{car.proprietario || car.owner}</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">—</span>
+                    )}
                   </td>
 
                   {/* Ubicazione / Garage */}

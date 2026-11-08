@@ -18,6 +18,7 @@ import { getLogoForBrand, getCustomBrandLogos, DEFAULT_BRAND_LOGOS, isValidBrand
 import { getVehicleExpirations } from './utils/notifications';
 import { getCurrentUser, setCurrentUser as setCurrentUserInStorage, logoutUser, syncUsersWithCloud, syncBackgroundsWithCloud } from './utils/auth';
 import { syncLocationsWithCloud } from './utils/locations';
+import { getOwners, syncOwnersWithCloud } from './utils/owners';
 import { checkAndTriggerAutomaticEmailAlerts, syncEmailConfigWithCloud } from './utils/emailAlerts';
 import { fetchCarsFromSupabase, syncCarsToSupabase, upsertSingleCarToSupabase, fetchPermissionsFromSupabase, syncPermissionsToSupabase } from './utils/supabase';
 import { saveCarsToLocal, getCarsFromLocal } from './utils/storage';
@@ -61,6 +62,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('Tutti');
   const [selectedLocation, setSelectedLocation] = useState('Tutti');
+  const [selectedOwner, setSelectedOwner] = useState('Tutti');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [sortBy, setSortBy] = useState('page'); // 'page' | 'brand' | 'hp_desc' | 'year_desc'
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
@@ -172,12 +174,13 @@ export default function App() {
   // Load Initial Data with Real-Time Cloud Sync (Supabase + LocalStorage + baseline cars.json)
   useEffect(() => {
     async function loadInitialCars() {
-      // 0. Sync deleted cars, email config, users, locations and backgrounds with Supabase Cloud
+      // 0. Sync deleted cars, email config, users, locations, owners and backgrounds with Supabase Cloud
       await Promise.allSettled([
         syncDeletedCarsWithCloud(),
         syncEmailConfigWithCloud(),
         syncUsersWithCloud(),
         syncLocationsWithCloud(),
+        syncOwnersWithCloud(),
         syncBackgroundsWithCloud()
       ]);
 
@@ -226,6 +229,7 @@ export default function App() {
             mainPhoto: validMain,
             pageImage: c.pageImage || base.pageImage || validMain,
             logoImg: validLogo,
+            proprietario: c.proprietario !== undefined ? c.proprietario : (base.proprietario || ''),
             scadenzaBollo: c.scadenzaBollo || base.scadenzaBollo || '',
             scadenzaAssicurazione: c.scadenzaAssicurazione || base.scadenzaAssicurazione || '',
             scadenzaRevisione: c.scadenzaRevisione || base.scadenzaRevisione || '',
@@ -559,6 +563,8 @@ export default function App() {
     
     // Clear filters so user immediately sees the newly added car
     setSelectedBrand('Tutti');
+    setSelectedLocation('Tutti');
+    setSelectedOwner('Tutti');
     setSearchQuery('');
     setOnlyFavorites(false);
     
@@ -732,6 +738,8 @@ export default function App() {
         setCars(active);
         saveCarsToLocal(active);
         setSelectedBrand('Tutti');
+        setSelectedLocation('Tutti');
+        setSelectedOwner('Tutti');
         setSearchQuery('');
         setOnlyFavorites(false);
         setSelectedCarIds([]);
@@ -764,10 +772,15 @@ export default function App() {
     return Array.from(map.values()).sort();
   }, [cars]);
 
+  // Extract list of all unique owners present in cars or configured in system
+  const owners = useMemo(() => {
+    return getOwners(cars);
+  }, [cars]);
+
   // Filter & Sort Logic
   const filteredCars = useMemo(() => {
     return cars.filter(car => {
-      // Search query filter (Brand, Model, Chassis, Year, Location, Targa)
+      // Search query filter (Brand, Model, Chassis, Year, Location, Targa, Proprietario)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchBrand = (car.brand || '').toLowerCase().includes(q);
@@ -776,7 +789,8 @@ export default function App() {
         const matchYear = (car.immatricolazione || '').toLowerCase().includes(q);
         const matchLocation = (car.location || car.ubicazione || '').toLowerCase().includes(q);
         const matchPlate = (car.targa || '').toLowerCase().includes(q);
-        if (!matchBrand && !matchModel && !matchChassis && !matchYear && !matchLocation && !matchPlate) {
+        const matchOwner = (car.proprietario || car.owner || '').toLowerCase().includes(q);
+        if (!matchBrand && !matchModel && !matchChassis && !matchYear && !matchLocation && !matchPlate && !matchOwner) {
           return false;
         }
       }
@@ -795,6 +809,15 @@ export default function App() {
         const carLoc = (car.location || car.ubicazione || '').trim().replace(/\s+/g, ' ').toLowerCase();
         const selLoc = selectedLocation.trim().replace(/\s+/g, ' ').toLowerCase();
         if (carLoc !== selLoc) {
+          return false;
+        }
+      }
+
+      // Owner filter
+      if (selectedOwner !== 'Tutti') {
+        const carOwner = (car.proprietario || car.owner || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        const selOwner = selectedOwner.trim().replace(/\s+/g, ' ').toLowerCase();
+        if (carOwner !== selOwner) {
           return false;
         }
       }
@@ -821,7 +844,7 @@ export default function App() {
       const getPage = c => (typeof c.page === 'number' ? c.page : 0);
       return getPage(a) - getPage(b);
     });
-  }, [cars, searchQuery, selectedBrand, onlyFavorites, sortBy]);
+  }, [cars, searchQuery, selectedBrand, selectedLocation, selectedOwner, onlyFavorites, sortBy]);
 
   const favoritesCount = useMemo(() => cars.filter(c => c.isFavorite).length, [cars]);
 
@@ -944,7 +967,7 @@ export default function App() {
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1 w-full">
         
-        {/* Brand & Location Filter Chips */}
+        {/* Brand, Location & Owner Filter Chips */}
         <StatsBar
           cars={cars}
           brands={brands}
@@ -953,6 +976,9 @@ export default function App() {
           locations={locations}
           selectedLocation={selectedLocation}
           setSelectedLocation={setSelectedLocation}
+          owners={owners}
+          selectedOwner={selectedOwner}
+          setSelectedOwner={setSelectedOwner}
           totalCarsCount={cars.length}
           filteredCount={filteredCars.length}
         />
@@ -1039,7 +1065,7 @@ export default function App() {
               Nessun risultato corrisponde ai filtri impostati. Prova a modificare la ricerca o ripristinare i filtri.
             </p>
             <button
-              onClick={() => { setSearchQuery(''); setSelectedBrand('Tutti'); setOnlyFavorites(false); }}
+              onClick={() => { setSearchQuery(''); setSelectedBrand('Tutti'); setSelectedLocation('Tutti'); setSelectedOwner('Tutti'); setOnlyFavorites(false); }}
               className="px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs"
             >
               Mostra Tutte le Vetture
@@ -1116,6 +1142,7 @@ export default function App() {
           onClose={() => { setIsAddModalOpen(false); setCarToEdit(null); }}
           onSaveCar={handleSaveCar}
           existingBrands={brands}
+          allCars={cars}
         />
       )}
 

@@ -25,10 +25,12 @@ import {
   Paperclip,
   Eye,
   Download,
-  Printer
+  Printer,
+  User
 } from 'lucide-react';
 import { getLogoForBrand, saveCustomBrandLogo, resetCustomBrandLogo, isValidBrandLogo, normalizeBrandName } from '../utils/brandLogos';
 import { getLocations, addLocation, removeLocation, renameLocation } from '../utils/locations';
+import { getOwners, addOwner, removeOwner, renameOwner } from '../utils/owners';
 import { openDocument, downloadDocument } from '../utils/documentViewer';
 import { processScannedDocumentFile } from '../utils/storage';
 import ImageCropperModal from './ImageCropperModal';
@@ -65,7 +67,8 @@ export default function AddEditCarModal({
   carToEdit, 
   onClose, 
   onSaveCar, 
-  existingBrands 
+  existingBrands,
+  allCars = []
 }) {
   useBodyScrollLock(true);
   const [activeFormTab, setActiveFormTab] = useState('general'); // 'general' | 'extended'
@@ -76,6 +79,13 @@ export default function AddEditCarModal({
   const [newLocInput, setNewLocInput] = useState('');
   const [editingLocName, setEditingLocName] = useState(null);
   const [editingValue, setEditingValue] = useState('');
+
+  const [availableOwners, setAvailableOwners] = useState(() => getOwners(allCars));
+  const [isManagingOwners, setIsManagingOwners] = useState(false);
+  const [newOwnerInput, setNewOwnerInput] = useState('');
+  const [editingOwnerName, setEditingOwnerName] = useState(null);
+  const [editingOwnerValue, setEditingOwnerValue] = useState('');
+
   const [docNotice, setDocNotice] = useState('');
   const [isProcessingDoc, setIsProcessingDoc] = useState(false);
 
@@ -85,6 +95,8 @@ export default function AddEditCarModal({
     model: '',
     location: '',
     customLocation: '',
+    proprietario: '',
+    customProprietario: '',
     immatricolazione: '',
     chassis: '',
     cilindrata: '',
@@ -125,10 +137,17 @@ export default function AddEditCarModal({
     const currentLocs = getLocations();
     setAvailableLocations(currentLocs);
 
+    const currentOwners = getOwners(allCars);
+    setAvailableOwners(currentOwners);
+
     if (carToEdit) {
       const locVal = (carToEdit.location || carToEdit.ubicazione || '').trim().replace(/\s+/g, ' ');
       const matchedLoc = currentLocs.find(l => l.toLowerCase() === locVal.toLowerCase());
       const isKnownLoc = Boolean(matchedLoc);
+
+      const ownerVal = (carToEdit.proprietario || carToEdit.owner || '').trim().replace(/\s+/g, ' ');
+      const matchedOwner = currentOwners.find(o => o.toLowerCase() === ownerVal.toLowerCase());
+      const isKnownOwner = Boolean(matchedOwner);
 
       const matchedBrand = existingBrands.find(b => normalizeBrandName(b) === normalizeBrandName(carToEdit.brand));
 
@@ -138,6 +157,8 @@ export default function AddEditCarModal({
         model: carToEdit.model || '',
         location: isKnownLoc ? matchedLoc : (locVal ? 'Altro' : ''),
         customLocation: !isKnownLoc ? locVal : '',
+        proprietario: isKnownOwner ? matchedOwner : (ownerVal ? 'Altro' : ''),
+        customProprietario: !isKnownOwner ? ownerVal : '',
         immatricolazione: carToEdit.immatricolazione || '',
         chassis: carToEdit.chassis || '',
         cilindrata: carToEdit.cilindrata || '',
@@ -347,12 +368,18 @@ export default function AddEditCarModal({
       addLocation(finalLocation);
     }
 
+    const finalProprietario = formData.proprietario === 'Altro' ? formData.customProprietario.trim() : formData.proprietario.trim();
+    if (formData.proprietario === 'Altro' && finalProprietario) {
+      addOwner(finalProprietario);
+    }
+
     const savedCar = {
       id: carToEdit ? carToEdit.id : `car_new_${Date.now()}`,
       page: carToEdit ? carToEdit.page : 0,
       brand: finalBrand,
       model: formData.model.trim(),
       location: finalLocation,
+      proprietario: finalProprietario,
       immatricolazione: formData.immatricolazione.trim(),
       chassis: formData.chassis.trim(),
       cilindrata: formData.cilindrata.trim(),
@@ -905,11 +932,11 @@ export default function AddEditCarModal({
                   </div>
 
                   {/* Ubicazione / Garage Veicolo */}
-                  <div className="sm:col-span-2 flex flex-col justify-end h-full pt-2 border-t border-slate-800/80">
+                  <div className="sm:col-span-1 flex flex-col justify-end h-full pt-2 border-t border-slate-800/80">
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
                         <MapPin className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
-                        <span>Ubicazione / Garage (Sede Vettura)</span>
+                        <span>Ubicazione / Garage</span>
                         <InfoTooltip text="Luogo di stazionamento fisico della vettura (es. Garage Principale, Milano Portaromana 91, Residenza Mare, Deposito)." />
                       </label>
                       <button
@@ -919,7 +946,7 @@ export default function AddEditCarModal({
                         title="Gestisci ed edita elenco ubicazioni e garage"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
-                        <span>Gestisci Ubicazioni</span>
+                        <span>Gestisci</span>
                       </button>
                     </div>
 
@@ -945,6 +972,53 @@ export default function AddEditCarModal({
                         value={formData.customLocation}
                         onChange={handleChange}
                         placeholder="Nome Nuovo Garage / Casa..."
+                        className="w-full mt-2 px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        required
+                      />
+                    )}
+                  </div>
+
+                  {/* Proprietario / Intestatario Veicolo */}
+                  <div className="sm:col-span-1 flex flex-col justify-end h-full pt-2 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
+                        <User className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+                        <span>Proprietario / Intestatario</span>
+                        <InfoTooltip text="Intestatario o proprietario della vettura (es. Shirantha, Luciano, Lorenzo, Aziendale, Collezione PB)." />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsManagingOwners(true)}
+                        className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg border border-amber-500/30 transition-all"
+                        title="Gestisci ed edita elenco proprietari"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Gestisci</span>
+                      </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <select
+                        name="proprietario"
+                        value={formData.proprietario}
+                        onChange={handleChange}
+                        className="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      >
+                        <option value="">Seleziona Proprietario (Opzionale)...</option>
+                        {availableOwners.map(owner => (
+                          <option key={owner} value={owner}>{owner}</option>
+                        ))}
+                        <option value="Altro">+ Nuovo Proprietario...</option>
+                      </select>
+                    </div>
+
+                    {formData.proprietario === 'Altro' && (
+                      <input
+                        type="text"
+                        name="customProprietario"
+                        value={formData.customProprietario}
+                        onChange={handleChange}
+                        placeholder="Nome Nuovo Proprietario..."
                         className="w-full mt-2 px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                         required
                       />
@@ -1588,6 +1662,170 @@ export default function AddEditCarModal({
               <button
                 type="button"
                 onClick={() => setIsManagingLocations(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-xl transition-all"
+              >
+                Fatto / Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Dialog: Gestisci Elenco Proprietari */}
+      {isManagingOwners && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-bold text-white">Gestisci Elenco Proprietari</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsManagingOwners(false);
+                  setEditingOwnerName(null);
+                  setNewOwnerInput('');
+                }}
+                className="p-1 text-slate-400 hover:text-white rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Input per aggiungere nuovo proprietario */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newOwnerInput}
+                onChange={(e) => setNewOwnerInput(e.target.value)}
+                placeholder="Nuovo Proprietario (es. Nome e Cognome)..."
+                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (newOwnerInput.trim()) {
+                      const updated = addOwner(newOwnerInput.trim());
+                      setAvailableOwners(updated);
+                      setNewOwnerInput('');
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newOwnerInput.trim()) {
+                    const updated = addOwner(newOwnerInput.trim());
+                    setAvailableOwners(updated);
+                    setNewOwnerInput('');
+                  }
+                }}
+                className="px-3.5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Aggiungi</span>
+              </button>
+            </div>
+
+            {/* Lista dei proprietari con modifica inline ed eliminazione */}
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {availableOwners.map((owner) => (
+                <div key={owner} className="flex items-center justify-between gap-2 p-2.5 bg-slate-950/70 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
+                  {editingOwnerName === owner ? (
+                    <div className="flex-1 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingOwnerValue}
+                        onChange={(e) => setEditingOwnerValue(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-amber-500/60 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (editingOwnerValue.trim() && editingOwnerValue.trim() !== owner) {
+                              const updated = renameOwner(owner, editingOwnerValue.trim());
+                              setAvailableOwners(updated);
+                              if (formData.proprietario === owner) {
+                                setFormData(prev => ({ ...prev, proprietario: editingOwnerValue.trim() }));
+                              }
+                            }
+                            setEditingOwnerName(null);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (editingOwnerValue.trim() && editingOwnerValue.trim() !== owner) {
+                            const updated = renameOwner(owner, editingOwnerValue.trim());
+                            setAvailableOwners(updated);
+                            if (formData.proprietario === owner) {
+                              setFormData(prev => ({ ...prev, proprietario: editingOwnerValue.trim() }));
+                            }
+                          }
+                          setEditingOwnerName(null);
+                        }}
+                        className="p-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold text-xs"
+                        title="Salva Modifica Nome"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingOwnerName(null)}
+                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg text-xs"
+                        title="Annulla Modifica"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-xs font-semibold text-slate-200">{owner}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingOwnerName(owner);
+                            setEditingOwnerValue(owner);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors"
+                          title="Modifica Nome Proprietario"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`Eliminare il proprietario "${owner}"?`)) {
+                              const updated = removeOwner(owner);
+                              setAvailableOwners(updated);
+                              if (formData.proprietario === owner) {
+                                setFormData(prev => ({ ...prev, proprietario: '' }));
+                              }
+                            }
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                          title="Elimina Proprietario"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsManagingOwners(false);
+                  setEditingOwnerName(null);
+                  setNewOwnerInput('');
+                }}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-xl transition-all"
               >
                 Fatto / Chiudi

@@ -28,6 +28,7 @@ import {
   FileCheck,
   Bell,
   FolderOpen,
+  User,
   Upload,
   Maximize2,
   FilePlus,
@@ -881,7 +882,7 @@ export default function CarDetailModal({
               
               {/* Ubicazione / Garage (Only if allowed) */}
               {showLocation && (
-                <div className="bg-slate-900/70 p-4 rounded-2xl border border-amber-500/30 flex items-center space-x-3 col-span-1 sm:col-span-2 bg-gradient-to-r from-amber-500/10 via-slate-900/70 to-slate-900/70">
+                <div className="bg-slate-900/70 p-4 rounded-2xl border border-amber-500/30 flex items-center space-x-3 bg-gradient-to-r from-amber-500/10 via-slate-900/70 to-slate-900/70">
                   <div className="p-3 bg-amber-500/20 text-amber-300 rounded-xl border border-amber-500/30 shadow-md">
                     <MapPin className="w-5 h-5 text-amber-400" />
                   </div>
@@ -891,6 +892,17 @@ export default function CarDetailModal({
                   </div>
                 </div>
               )}
+
+              {/* Proprietario / Intestatario */}
+              <div className="bg-slate-900/70 p-4 rounded-2xl border border-amber-500/30 flex items-center space-x-3 bg-gradient-to-r from-amber-500/10 via-slate-900/70 to-slate-900/70">
+                <div className="p-3 bg-amber-500/20 text-amber-300 rounded-xl border border-amber-500/30 shadow-md">
+                  <User className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-amber-400 font-bold uppercase tracking-wider">Proprietario / Intestatario</p>
+                  <p className="text-base font-extrabold text-white">{car.proprietario || car.owner || 'Non specificato'}</p>
+                </div>
+              </div>
 
               {/* Immatricolazione */}
               <div className="bg-slate-900/70 p-4 rounded-2xl border border-slate-800 flex items-center space-x-3">
