@@ -32,7 +32,7 @@ import { getLogoForBrand, saveCustomBrandLogo, resetCustomBrandLogo, isValidBran
 import { getLocations, addLocation, removeLocation, renameLocation } from '../utils/locations';
 import { getOwners, addOwner, removeOwner, renameOwner } from '../utils/owners';
 import { openDocument, downloadDocument } from '../utils/documentViewer';
-import { processScannedDocumentFile } from '../utils/storage';
+import { processScannedDocumentFile, compressImageFile } from '../utils/storage';
 import ImageCropperModal from './ImageCropperModal';
 import BrandLogosModal from './BrandLogosModal';
 import { useBodyScrollLock } from '../utils/scrollLock';
@@ -279,19 +279,21 @@ export default function AddEditCarModal({
     }
   };
 
-  // Handle local car photos file upload (converts to base64 DataURL)
-  const handleFileUpload = (e) => {
+  // Handle local car photos file upload (converts to base64 DataURL with crisp compression)
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
+    if (!files || files.length === 0) return;
+
+    for (const file of files) {
+      const compressed = await compressImageFile(file, 1920, 0.85);
+      if (compressed) {
         setFormData(prev => ({
           ...prev,
-          images: [...prev.images, uploadEvent.target.result]
+          images: [...prev.images, compressed]
         }));
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    }
+    e.target.value = '';
   };
 
   // Handle adding image via URL

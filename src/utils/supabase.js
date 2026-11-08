@@ -24,6 +24,10 @@ export function mapRowToCar(row) {
     extra = { userNotes: row.notes || '' };
   }
 
+  const carImages = (row.images && row.images.length > 0)
+    ? row.images
+    : ((row.carphotos && row.carphotos.length > 0) ? row.carphotos : (extra.images || []));
+
   return {
     ...extra,
     id: row.id,
@@ -35,13 +39,13 @@ export function mapRowToCar(row) {
     cilindrata: row.cilindrata,
     horsepower: row.horsepower,
     esemplari: row.esemplari,
-    images: (row.images && row.images.length > 0) ? row.images : (extra.images || []),
-    pageImage: row.pageimage || row.pageImage || extra.pageImage || '',
+    images: carImages,
+    pageImage: row.pageimage || row.pageImage || extra.pageImage || (carImages[0] || ''),
     isFavorite: Boolean(row.isfavorite ?? row.isFavorite ?? extra.isFavorite),
     notes: extra.userNotes !== undefined ? extra.userNotes : (row.notes || ''),
-    mainPhoto: row.mainphoto || row.mainPhoto || extra.mainPhoto || '',
+    mainPhoto: row.mainphoto || row.mainPhoto || extra.mainPhoto || (carImages[0] || ''),
     logoImg: row.logoimg || row.logoImg || extra.logoImg || '',
-    carPhotos: (row.carphotos && row.carphotos.length > 0) ? row.carphotos : (extra.carPhotos || []),
+    carPhotos: carImages,
     documents: Array.isArray(extra.documents) ? extra.documents : []
   };
 }
@@ -72,12 +76,15 @@ export function mapCarToRow(car) {
     ...restOfCar
   } = car;
 
+  const resolvedImages = Array.isArray(car.images) && car.images.length > 0
+    ? car.images
+    : (Array.isArray(car.carPhotos) ? car.carPhotos : []);
+
+  // Do NOT duplicate entire multi-MB images array inside JSON string notes to avoid payload size limit
   const extraPayload = {
     ...restOfCar,
     userNotes: car.notes || '',
-    documents: Array.isArray(car.documents) ? car.documents : [],
-    images: Array.isArray(car.images) ? car.images : [],
-    carPhotos: Array.isArray(car.carPhotos) ? car.carPhotos : []
+    documents: Array.isArray(car.documents) ? car.documents : []
   };
 
   return {
@@ -90,13 +97,13 @@ export function mapCarToRow(car) {
     cilindrata: car.cilindrata || '',
     horsepower: car.horsepower || '',
     esemplari: car.esemplari || '',
-    images: Array.isArray(car.images) ? car.images : [],
-    pageimage: car.pageImage || '',
+    images: resolvedImages,
+    pageimage: car.pageImage || resolvedImages[0] || '',
     isfavorite: Boolean(car.isFavorite),
     notes: JSON.stringify(extraPayload),
-    mainphoto: car.mainPhoto || '',
+    mainphoto: car.mainPhoto || resolvedImages[0] || '',
     logoimg: car.logoImg || '',
-    carphotos: Array.isArray(car.carPhotos) ? car.carPhotos : []
+    carphotos: resolvedImages
   };
 }
 

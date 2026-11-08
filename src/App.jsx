@@ -295,10 +295,23 @@ export default function App() {
           formattedSupabase = formattedSupabase.map(sc => {
             const lc = localCars.find(l => String(l.id) === String(sc.id));
             if (!lc) return sc;
+
+            // Merge images so local uploaded photos are never lost if Supabase was slower to sync
+            const scImgs = Array.isArray(sc.images) ? sc.images : [];
+            const lcImgs = Array.isArray(lc.images) ? lc.images : [];
+            let mergedImgs = [...lcImgs];
+            scImgs.forEach(img => {
+              if (img && !mergedImgs.includes(img)) {
+                mergedImgs.push(img);
+              }
+            });
+            if (mergedImgs.length === 0 && scImgs.length > 0) mergedImgs = scImgs;
+
             const scDocs = Array.isArray(sc.documents) ? sc.documents : [];
             const lcDocs = Array.isArray(lc.documents) ? lc.documents : [];
+            let mergedDocs = scDocs;
             if (lcDocs.length > 0 && scDocs.length === 0) {
-              return { ...sc, documents: lcDocs };
+              mergedDocs = lcDocs;
             } else if (lcDocs.length > 0 && scDocs.length > 0) {
               const map = new Map();
               scDocs.forEach(d => { if (d && d.id) map.set(d.id, d); });
@@ -319,9 +332,17 @@ export default function App() {
                   }
                 }
               });
-              return { ...sc, documents: Array.from(map.values()) };
+              mergedDocs = Array.from(map.values());
             }
-            return sc;
+
+            return {
+              ...sc,
+              images: mergedImgs,
+              carPhotos: mergedImgs,
+              mainPhoto: mergedImgs[0] || sc.mainPhoto || lc.mainPhoto,
+              pageImage: mergedImgs[0] || sc.pageImage || lc.pageImage,
+              documents: mergedDocs
+            };
           });
         }
 
@@ -388,21 +409,41 @@ export default function App() {
         const activeSupabase = filterOutDeletedCars(freshSupabase);
         const formatted = formatCarImages(activeSupabase);
         setCars(prev => {
-          // Merge prev documents into freshSupabase so remote poll never clears newly attached docs
+          // Merge prev documents and images into freshSupabase so remote poll never clears newly attached docs or photos
           const mergedWithDocs = formatted.map(sc => {
             const prevCar = (prev || []).find(p => String(p.id) === String(sc.id));
             if (!prevCar) return sc;
+
+            const prevImgs = Array.isArray(prevCar.images) ? prevCar.images : [];
+            const scImgs = Array.isArray(sc.images) ? sc.images : [];
+            let mergedImgs = [...prevImgs];
+            scImgs.forEach(img => {
+              if (img && !mergedImgs.includes(img)) {
+                mergedImgs.push(img);
+              }
+            });
+            if (mergedImgs.length === 0 && scImgs.length > 0) mergedImgs = scImgs;
+
             const prevDocs = Array.isArray(prevCar.documents) ? prevCar.documents : [];
             const scDocs = Array.isArray(sc.documents) ? sc.documents : [];
+            let mergedDocs = scDocs;
             if (prevDocs.length > 0 && scDocs.length === 0) {
-              return { ...sc, documents: prevDocs };
+              mergedDocs = prevDocs;
             } else if (prevDocs.length > 0 && scDocs.length > 0) {
               const map = new Map();
               scDocs.forEach(d => { if (d && d.id) map.set(d.id, d); });
               prevDocs.forEach(d => { if (d && d.id) map.set(d.id, d); });
-              return { ...sc, documents: Array.from(map.values()) };
+              mergedDocs = Array.from(map.values());
             }
-            return sc;
+
+            return {
+              ...sc,
+              images: mergedImgs,
+              carPhotos: mergedImgs,
+              mainPhoto: mergedImgs[0] || sc.mainPhoto || prevCar.mainPhoto,
+              pageImage: mergedImgs[0] || sc.pageImage || prevCar.pageImage,
+              documents: mergedDocs
+            };
           });
 
           // Compare JSON string to prevent unnecessary re-renders
@@ -430,38 +471,111 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Manual Cloud Data Refresh Handler
+  // Manual Cloud Data Refresh Handler with Smart 2-Way Merge (Zero Data Loss)
   const handleRefreshCloudData = async () => {
     setIsSyncing(true);
     try {
+      // 1. First sync any deleted cars with cloud
       await syncDeletedCarsWithCloud();
+
+      // 2. IMPORTANT: Push current local cars (with all local photos/docs) to Supabase Cloud FIRST!
+      if (cars && cars.length > 0) {
+        await syncCarsToSupabase(cars);
+      }
+
+      // 3. Fetch latest data from Supabase Cloud
       const freshSupabase = await fetchCarsFromSupabase();
+      let remoteCars = [];
       if (freshSupabase && freshSupabase.length > 0) {
-        const activeSupabase = filterOutDeletedCars(freshSupabase);
-        const formatted = formatCarImages(activeSupabase);
-        setCars(formatted);
-        saveCarsToLocal(formatted);
+        remoteCars = filterOutDeletedCars(freshSupabase);
       } else {
         const res = await fetch(`${import.meta.env.BASE_URL}data/cars.json?t=${Date.now()}`);
         if (res.ok) {
           const json = await res.json();
           if (Array.isArray(json)) {
-            const activeCars = filterOutDeletedCars(json);
-            const formatted = formatCarImages(activeCars);
-            setCars(formatted);
-            saveCarsToLocal(formatted);
+            remoteCars = filterOutDeletedCars(json);
           }
         }
       }
 
-      // Refresh permissions
+      // 4. Perform an intelligent 2-way merge:
+      // NEVER overwrite local photos or documents if local has more or newer ones!
+      const mergedCars = [...(cars || [])];
+
+      remoteCars.forEach(remoteCar => {
+        const localIdx = mergedCars.findIndex(c => String(c.id) === String(remoteCar.id));
+        if (localIdx === -1) {
+          // New car from cloud that doesn't exist locally
+          mergedCars.push(remoteCar);
+        } else {
+          const localCar = mergedCars[localIdx];
+          
+          // Merge images: preserve all unique local and remote images
+          const localImgs = Array.isArray(localCar.images) ? localCar.images : [];
+          const remoteImgs = Array.isArray(remoteCar.images) ? remoteCar.images : [];
+          let mergedImages = [...localImgs];
+          remoteImgs.forEach(img => {
+            if (img && !mergedImages.includes(img)) {
+              mergedImages.push(img);
+            }
+          });
+          if (mergedImages.length === 0 && remoteImgs.length > 0) {
+            mergedImages = remoteImgs;
+          } else if (mergedImages.length === 0 && localImgs.length > 0) {
+            mergedImages = localImgs;
+          }
+
+          // Merge documents: keep all local and remote documents by ID
+          const localDocs = Array.isArray(localCar.documents) ? localCar.documents : [];
+          const remoteDocs = Array.isArray(remoteCar.documents) ? remoteCar.documents : [];
+          const docsMap = new Map();
+          remoteDocs.forEach(d => { if (d && d.id) docsMap.set(d.id, d); });
+          localDocs.forEach(d => { if (d && d.id) docsMap.set(d.id, d); });
+          const mergedDocs = Array.from(docsMap.values());
+
+          mergedCars[localIdx] = {
+            ...remoteCar,
+            ...localCar, // Local edits take precedence
+            images: mergedImages,
+            carPhotos: mergedImages,
+            mainPhoto: mergedImages[0] || localCar.mainPhoto || remoteCar.mainPhoto,
+            pageImage: mergedImages[0] || localCar.pageImage || remoteCar.pageImage,
+            documents: mergedDocs
+          };
+        }
+      });
+
+      const formatted = formatCarImages(mergedCars);
+      setCars(formatted);
+      saveCarsToLocal(formatted);
+
+      // 5. In local mode, flush merged state to public/data/cars.json
+      if (typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '0.0.0.0'
+      )) {
+        fetch('/api/sync-cars-json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cars: formatted })
+        }).catch(e => console.warn('Sync cars.json in local mode:', e));
+      }
+
+      // 6. Push final merged dataset back to Supabase to keep Cloud 100% updated
+      await syncCarsToSupabase(formatted);
+
+      // 7. Refresh permissions
       const freshPerms = await fetchPermissionsFromSupabase();
       if (freshPerms) {
         saveClientPermissions(freshPerms);
         setClientPermissions(freshPerms);
       }
+
+      alert('Sincronizzazione Cloud completata con successo! Tutte le foto, documenti e modifiche sono stati sincronizzati e protetti.');
     } catch (err) {
       console.error('Manual refresh error:', err);
+      alert('Avviso di sincronizzazione: ' + (err.message || 'Verifica la connessione internet.'));
     } finally {
       setIsSyncing(false);
     }
@@ -676,6 +790,10 @@ export default function App() {
       return c;
     });
     saveCarsState(updated);
+    const updatedCar = updated.find(c => String(c.id) === String(carId));
+    if (updatedCar) {
+      upsertSingleCarToSupabase(updatedCar);
+    }
     if (selectedCar && String(selectedCar.id) === String(carId)) {
       setSelectedCar(prev => ({
         ...prev,
@@ -713,6 +831,10 @@ export default function App() {
       logoImg: getLogoForBrand(car.brand) || (isValidBrandLogo(car.logoImg) ? car.logoImg : '')
     }));
     saveCarsState(updated);
+    const updatedCar = updated.find(c => String(c.id) === String(carId));
+    if (updatedCar) {
+      upsertSingleCarToSupabase(updatedCar);
+    }
     if (selectedCar) {
       setSelectedCar(prev => prev ? ({
         ...prev,
