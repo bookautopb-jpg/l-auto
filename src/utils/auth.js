@@ -402,37 +402,67 @@ export const DEFAULT_MASTER_PIN = '0822';
 const MASTER_PIN_STORAGE_KEY = 'book_auto_pb_master_pin_v1';
 
 /**
- * Returns current master security PIN (Option 3 emergency unlock)
+ * Restituisce il PIN Master di Sicurezza configurato.
+ * Legge esclusivamente quello impostato dal Super Admin (con fallback iniziale a DEFAULT_MASTER_PIN).
  */
 export function getMasterRecoveryPin() {
   try {
     const saved = localStorage.getItem(MASTER_PIN_STORAGE_KEY);
     if (saved && saved.trim()) return saved.trim();
   } catch (e) {}
+
+  try {
+    const users = getUsers();
+    const superAdmin = users.find(u => u.role === 'super_admin');
+    if (superAdmin && superAdmin.masterPin && String(superAdmin.masterPin).trim()) {
+      return String(superAdmin.masterPin).trim();
+    }
+  } catch (e) {}
+
   return DEFAULT_MASTER_PIN;
 }
 
 /**
- * Sets new master security PIN (saved by Super Admin in settings)
+ * Imposta e salva il nuovo PIN Master di Sicurezza del Super Admin.
  */
 export function setMasterRecoveryPin(newPin) {
   const clean = (newPin || '').trim();
   if (clean) {
-    localStorage.setItem(MASTER_PIN_STORAGE_KEY, clean);
+    try {
+      localStorage.setItem(MASTER_PIN_STORAGE_KEY, clean);
+    } catch (e) {}
+
+    // Sincronizza il PIN anche sul profilo del Super Admin
+    try {
+      const users = getUsers();
+      let changed = false;
+      const updated = users.map(u => {
+        if (u.role === 'super_admin') {
+          changed = true;
+          return { ...u, masterPin: clean };
+        }
+        return u;
+      });
+      if (changed) {
+        saveUsers(updated);
+      }
+    } catch (e) {}
+
     return clean;
   }
   return DEFAULT_MASTER_PIN;
 }
 
 /**
- * Validates whether entered PIN matches the master recovery PIN
- * Automatically accepts the configured PIN, plus factory master PINs (0822 and 8822)
+ * Verifica il PIN Master inserito.
+ * ACCETTA ESCLUSIVAMENTE IL PIN IMPOSTATO DAL SUPER ADMIN.
+ * Nessun PIN alternativo, nessuna backdoor, nessun codice secondario.
  */
 export function verifyMasterPin(inputPin) {
   const clean = (inputPin || '').trim();
   if (!clean) return false;
-  const savedPin = getMasterRecoveryPin();
-  return clean === savedPin || clean === '0822' || clean === '8822';
+  const configuredPin = getMasterRecoveryPin();
+  return clean === configuredPin;
 }
 
 export const ADMIN_RECOVERY_EMAIL_KEY = 'book_auto_pb_admin_recovery_email';
