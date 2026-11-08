@@ -21,7 +21,8 @@ import {
   LogOut,
   User,
   FolderOpen,
-  ChevronDown
+  ChevronDown,
+  HelpCircle
 } from 'lucide-react';
 import { isStaffUser, canViewExpirations } from '../utils/permissions';
 
@@ -56,7 +57,8 @@ export default function Navbar({
   totalDocumentsCount = 0,
   theme = 'military',
   setTheme,
-  onGoHome
+  onGoHome,
+  onOpenGuideModal
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -265,6 +267,17 @@ export default function Navbar({
               </button>
             )}
 
+            {/* Guida & Manuale (?) Button */}
+            <button
+              type="button"
+              onClick={onOpenGuideModal}
+              className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-2 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 hover:text-white border border-amber-500/40 hover:border-amber-400 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95 shadow-sm"
+              title="Guida & Manuale di Tutte le Funzioni del Sito (?)"
+            >
+              <HelpCircle className="w-4 h-4 text-amber-400" />
+              <span className="hidden xl:inline">Guida ?</span>
+            </button>
+
             {/* Active User Dropdown Menu */}
             {currentUser && (
               <div className="relative shrink-0 pl-1 border-l border-slate-800" ref={userMenuRef}>
@@ -392,6 +405,20 @@ export default function Navbar({
                         type="button"
                         onClick={() => {
                           setUserMenuOpen(false);
+                          onOpenGuideModal && onOpenGuideModal();
+                        }}
+                        className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all cursor-pointer text-left font-semibold"
+                      >
+                        <HelpCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span>Guida & Funzioni del Sito (?)</span>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-800" />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
                           onLogout && onLogout();
                         }}
                         className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-rose-300 hover:text-white hover:bg-rose-500/20 transition-all cursor-pointer text-left font-semibold"
@@ -408,6 +435,16 @@ export default function Navbar({
 
           {/* Mobile Right Controls */}
           <div className="flex lg:hidden items-center space-x-1.5 sm:space-x-2">
+            {/* Mobile Help "?" Button */}
+            <button
+              type="button"
+              onClick={onOpenGuideModal}
+              className="p-1.5 sm:p-2 rounded-xl border border-amber-500/40 bg-slate-900/80 text-amber-300 hover:bg-amber-500/20 transition-all active:scale-95"
+              title="Guida & Come funziona (?)"
+            >
+              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+            </button>
+
             <button
               onClick={() => setOnlyFavorites(!onlyFavorites)}
               className={`p-1.5 sm:p-2 rounded-xl border transition-all active:scale-95 ${
@@ -486,6 +523,19 @@ export default function Navbar({
         {/* Mobile Menu Panel */}
         {mobileMenuOpen && (
           <div className="lg:hidden pb-4 space-y-3 animate-fade-in border-t border-slate-800 pt-3">
+            
+            {/* Quick Guida Banner */}
+            <button
+              type="button"
+              onClick={() => { setMobileMenuOpen(false); onOpenGuideModal && onOpenGuideModal(); }}
+              className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/40 text-amber-300 font-bold text-xs shadow-md active:scale-98 transition-all"
+            >
+              <span className="flex items-center space-x-2.5">
+                <HelpCircle className="w-4 h-4 text-amber-400" />
+                <span>Guida Completa & Come Funziona l'App</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px]">?</span>
+            </button>
             
             {/* User Profile Card */}
             {currentUser && (

@@ -13,6 +13,7 @@ import AdminModal from './components/AdminModal';
 import AdminLoginPage from './components/AdminLoginPage';
 import AutoEmailNotificationPopup from './components/AutoEmailNotificationPopup';
 import CartellaDocumentiModal from './components/CartellaDocumentiModal';
+import AppGuideModal from './components/AppGuideModal';
 import { SlidersHorizontal, ArrowUpDown, Plus, RotateCcw, Car as CarIcon, Sparkles, CheckSquare, Printer, Square, Trash2, Bell, User } from 'lucide-react';
 import { getLogoForBrand, getCustomBrandLogos, DEFAULT_BRAND_LOGOS, isValidBrandLogo, getCanonicalBrandName, normalizeBrandName } from './utils/brandLogos';
 import { getVehicleExpirations } from './utils/notifications';
@@ -102,6 +103,7 @@ export default function App() {
   const [isExpirationsModalOpen, setIsExpirationsModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isCartellaDocumentiOpen, setIsCartellaDocumentiOpen] = useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [autoEmailPopupAlerts, setAutoEmailPopupAlerts] = useState(null);
   const hasShownEmailAlertRef = useRef(false);
 
@@ -114,7 +116,8 @@ export default function App() {
     isBrandLogosModalOpen ||
     isExpirationsModalOpen ||
     isAdminModalOpen ||
-    isCartellaDocumentiOpen
+    isCartellaDocumentiOpen ||
+    isGuideModalOpen
   );
   useBodyScrollLock(isAnyModalOpen);
 
@@ -522,6 +525,7 @@ export default function App() {
     setIsExpirationsModalOpen(false);
     setIsAdminModalOpen(false);
     setIsCartellaDocumentiOpen(false);
+    setIsGuideModalOpen(false);
     setAutoEmailPopupAlerts(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -956,6 +960,7 @@ export default function App() {
         theme={theme}
         setTheme={setTheme}
         onGoHome={handleGoHome}
+        onOpenGuideModal={() => setIsGuideModalOpen(true)}
       />
 
       {/* Top Expiration Notification Banner (Shown ONLY if allowed for clients, or always for staff) */}
@@ -1304,6 +1309,13 @@ export default function App() {
           onClose={handleCloseEmailPopup}
           onOpenAdminModal={() => setIsAdminModalOpen(true)}
           currentUser={currentUser}
+        />
+      )}
+
+      {/* Guida Ufficiale Completa (?) Modal */}
+      {isGuideModalOpen && (
+        <AppGuideModal
+          onClose={() => setIsGuideModalOpen(false)}
         />
       )}
 
