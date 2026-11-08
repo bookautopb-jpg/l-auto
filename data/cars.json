@@ -5,6 +5,7 @@
     "brand": "FIAT",
     "model": "500s",
     "location": "",
+    "proprietario": "",
     "immatricolazione": "2025",
     "chassis": "1123456789",
     "cilindrata": "300",
@@ -13,11 +14,13 @@
     "notes": "prova",
     "images": [
       "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_1.png",
-      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_2.png"
+      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_2.png",
+      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_3.jpeg"
     ],
     "carPhotos": [
       "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_1.png",
-      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_2.png"
+      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_2.png",
+      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_3.jpeg"
     ],
     "logoImg": "./images/logos/fiat.jpeg",
     "mainPhoto": "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_1.png",
@@ -37,11 +40,26 @@
         "uploadedAt": "2026-10-19"
       }
     ],
+    "targa": "",
+    "tipoMotore": "",
+    "codiceColore": "",
+    "pneumatici": "",
+    "scadenzaRevisione": "",
     "scadenzaBollo": "",
     "scadenzaAssicurazione": "",
-    "scadenzaRevisione": "",
+    "contattiEmergenza": "",
+    "ultimoTagliandoData": "",
+    "ultimoTagliandoKm": "",
     "prossimoTagliandoData": "",
-    "proprietario": ""
+    "prossimoTagliandoKm": "",
+    "interventiManutenzione": "",
+    "pneumaticiStagione": "",
+    "mediaConsumi": "",
+    "costoMedioPieno": "",
+    "costoAnnoAssicurazione": "",
+    "costoAnnoBollo": "",
+    "costiManutenzioneAnnua": "",
+    "noteAnomalie": ""
   },
   {
     "id": "car_2",
