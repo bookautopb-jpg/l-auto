@@ -505,6 +505,27 @@ export default function App() {
     setSelectedCarIds([]);
   };
 
+  // Return to Home / Initial Main View (Reset search, filters, close modals, and scroll to top)
+  const handleGoHome = () => {
+    setSearchQuery('');
+    setSelectedBrand('Tutti');
+    setSelectedLocation('Tutti');
+    setSelectedOwner('Tutti');
+    setOnlyFavorites(false);
+    setSortBy('page');
+    setSelectedCar(null);
+    setCarToEdit(null);
+    setIsAddModalOpen(false);
+    setIsBackupModalOpen(false);
+    setIsPdfReportModalOpen(false);
+    setIsBrandLogosModalOpen(false);
+    setIsExpirationsModalOpen(false);
+    setIsAdminModalOpen(false);
+    setIsCartellaDocumentiOpen(false);
+    setAutoEmailPopupAlerts(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Selected Cars list
   const selectedCarsList = useMemo(() => {
     return cars.filter(c => selectedCarIds.includes(c.id));
@@ -934,6 +955,7 @@ export default function App() {
         totalDocumentsCount={totalDocumentsCount}
         theme={theme}
         setTheme={setTheme}
+        onGoHome={handleGoHome}
       />
 
       {/* Top Expiration Notification Banner (Shown ONLY if allowed for clients, or always for staff) */}

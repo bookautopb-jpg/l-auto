@@ -55,7 +55,8 @@ export default function Navbar({
   onOpenCartellaDocumenti,
   totalDocumentsCount = 0,
   theme = 'military',
-  setTheme
+  setTheme,
+  onGoHome
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -83,24 +84,39 @@ export default function Navbar({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* Logo & Title */}
-          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0" onClick={() => { setSelectedBrand('Tutti'); setOnlyFavorites(false); setSearchQuery(''); }}>
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-200 p-0.5 shadow-lg shadow-amber-500/20 shrink-0">
+          {/* Logo & Title (Click to return to home / main view) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (onGoHome) {
+                onGoHome();
+              } else {
+                setSelectedBrand('Tutti');
+                setOnlyFavorites(false);
+                setSearchQuery('');
+              }
+              setMobileMenuOpen(false);
+              setUserMenuOpen(false);
+            }}
+            className="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0 text-left group transition-all transform active:scale-95 focus:outline-none"
+            title="Torna alla pagina principale"
+          >
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-200 p-0.5 shadow-lg shadow-amber-500/20 shrink-0 group-hover:scale-105 group-hover:shadow-amber-500/30 transition-all">
               <div className="w-full h-full bg-[#0b132b] rounded-[10px] sm:rounded-[14px] flex items-center justify-center">
-                <Car className="w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
+                <Car className="w-4 h-4 sm:w-6 sm:h-6 text-amber-400 group-hover:rotate-3 transition-transform" />
               </div>
             </div>
             <div>
               <div className="flex items-center space-x-1.5 sm:space-x-2">
-                <span className="font-heading font-bold text-base sm:text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500">
+                <span className="font-heading font-bold text-base sm:text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 group-hover:brightness-125 transition-all">
                   BOOK AUTO PB
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium hidden sm:block">
+              <p className="text-xs text-slate-400 font-medium hidden sm:block group-hover:text-slate-300 transition-colors">
                 Collezione Vetture & Specifiche Tecniche
               </p>
             </div>
-          </div>
+          </button>
 
           {/* Search Bar - Responsive & Compact to preserve room for right buttons */}
           <div className="hidden md:flex flex-1 min-w-[120px] max-w-xs lg:max-w-sm xl:max-w-md mx-2 sm:mx-3">
