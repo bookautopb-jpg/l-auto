@@ -10,14 +10,9 @@ import { saveUsersToIndexedDB, getUsersFromIndexedDB } from './storage.js';
 const USERS_STORAGE_KEY = 'book_auto_pb_users_v2';
 const BACKGROUNDS_STORAGE_KEY = 'book_auto_pb_bg_images_v1';
 
-// Central DreamHost Server API endpoint for multi-device sync
-const DREAMHOST_API_USERS = 'https://nisshi.dreamhosters.com/api/users.php';
+// Central API endpoint for users sync
 function getUsersApiUrl() {
-  if (typeof window === 'undefined') return DREAMHOST_API_USERS;
-  if (window.location.hostname.includes('dreamhosters.com') || window.location.hostname.includes('nisshi')) {
-    return './api/users.php';
-  }
-  return DREAMHOST_API_USERS;
+  return './api/users.php';
 }
 
 let memoryUsersCache = null;
@@ -65,6 +60,7 @@ export const INITIAL_USERS = [
     "password": "Maduka0822",
     "name": "Shirantha",
     "role": "super_admin",
+    "email": "casemp2024@outlook.com",
     "createdAt": "2026-10-03T20:03:13.022Z"
   },
   {
@@ -72,8 +68,18 @@ export const INITIAL_USERS = [
     "username": "luciano",
     "password": "1234",
     "name": "Luciano",
-    "role": "editor",
+    "role": "viewer",
+    "email": "",
     "createdAt": "2026-10-06T18:08:36.076Z"
+  },
+  {
+    "id": "user_1794051214757",
+    "username": "lorenzo",
+    "password": "Athena",
+    "name": "Lorenzo",
+    "role": "admin",
+    "email": "cantinaportaromana93@gmail.com",
+    "createdAt": "2026-11-07T11:33:34.757Z"
   }
 ];
 
@@ -147,9 +153,9 @@ export function saveUsers(users) {
   });
 }
 
-// Sync users between Central DreamHost Server, Supabase Cloud and local storage
+// Sync users between Central Server, static users.json, Supabase Cloud and local storage
 export async function syncUsersWithCloud() {
-  // 1. Central DreamHost Server API (Highest priority for multi-device sync)
+  // 1. Try Central Users API or local users.json
   try {
     const apiUrl = getUsersApiUrl();
     const res = await fetch(`${apiUrl}?t=${Date.now()}`, {
@@ -167,8 +173,24 @@ export async function syncUsersWithCloud() {
       }
     }
   } catch (serverErr) {
-    console.warn('DreamHost users API fetch error:', serverErr);
+    // API not responding (e.g. static host like GitHub Pages), try data/users.json directly
   }
+
+  // 1b. Try static public/data/users.json (ideal for GitHub Pages & Localhost)
+  try {
+    const res = await fetch(`./data/users.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const staticUsers = await res.json();
+      if (Array.isArray(staticUsers) && staticUsers.length > 0) {
+        memoryUsersCache = staticUsers;
+        try {
+          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(staticUsers));
+        } catch (e) {}
+        saveUsersToIndexedDB(staticUsers).catch(() => {});
+        return staticUsers;
+      }
+    }
+  } catch (staticErr) {}
 
   // 2. Supabase Cloud if configured
   try {

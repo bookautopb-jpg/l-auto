@@ -476,6 +476,46 @@ function localDocumentStoragePlugin() {
           res.end();
         }
       });
+
+      // 9. Users API for localhost (GET/POST /api/users.php)
+      server.middlewares.use('/api/users.php', (req, res) => {
+        const usersPath = path.resolve('./public/data/users.json');
+        if (req.method === 'GET') {
+          if (fs.existsSync(usersPath)) {
+            const data = fs.readFileSync(usersPath, 'utf8');
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(data);
+            return;
+          }
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify([]));
+          return;
+        } else if (req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const users = JSON.parse(body);
+              if (Array.isArray(users)) {
+                fs.writeFileSync(usersPath, JSON.stringify(users, null, 2), 'utf8');
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, count: users.length }));
+                return;
+              }
+            } catch (err) {
+              console.error('Error saving users.json:', err);
+            }
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: 'Invalid users payload' }));
+          });
+          return;
+        }
+        res.statusCode = 404;
+        res.end();
+      });
     }
   };
 }
