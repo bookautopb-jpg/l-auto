@@ -923,14 +923,14 @@ export default function PdfPrintReportModal({
                     <div 
                       key={`${car.id}_page_${pageIndex}`} 
                       data-car-id={car.id}
-                      className="print-car-page print-main-sheet-page bg-white text-slate-900 border border-slate-200 print:border-none p-[12mm] flex flex-col justify-between box-border shrink-0 my-0 mx-auto"
+                      className="print-car-page print-main-sheet-page bg-white text-slate-900 border border-slate-200 print:border-none p-[8mm] sm:p-[10mm] flex flex-col justify-between box-border shrink-0 my-0 mx-auto"
                       style={{
                         width: '210mm',
                         minWidth: '210mm',
                         maxWidth: '210mm',
-                        height: '297mm',
-                        minHeight: '297mm',
-                        maxHeight: '297mm',
+                        height: '295mm',
+                        minHeight: '290mm',
+                        maxHeight: '295mm',
                         boxSizing: 'border-box'
                       }}
                     >
@@ -1036,12 +1036,12 @@ export default function PdfPrintReportModal({
                       
                       {/* 1 Photo: Centered alone in page middle */}
                       {includePhotos && pagePhotos.length === 1 && (
-                        <div className="flex-1 my-auto flex items-center justify-center py-4 w-full">
-                          <div className="w-full max-w-[175mm] h-full max-h-[155mm] min-h-[100mm] bg-white flex items-center justify-center p-0 mx-auto">
+                        <div className="flex-1 my-auto flex items-center justify-center py-2 w-full">
+                          <div className="w-full max-w-[170mm] h-full max-h-[135mm] min-h-[90mm] bg-white flex items-center justify-center p-0 mx-auto">
                             <img 
                               src={pagePhotos[0]} 
                               alt={`${car.brand} ${car.model}`}
-                              className="max-w-full max-h-[150mm] w-auto h-auto object-contain block mx-auto my-auto"
+                              className="max-w-full max-h-[130mm] w-auto h-auto object-contain block mx-auto my-auto"
                             />
                           </div>
                         </div>
@@ -1049,19 +1049,19 @@ export default function PdfPrintReportModal({
 
                       {/* 2 Photos: Vertical Stack (1 top, 1 bottom, centered) */}
                       {includePhotos && pagePhotos.length === 2 && (
-                        <div className="flex-1 my-auto flex flex-col justify-center items-center space-y-4 py-2 w-full">
-                          <div className="w-full max-w-[155mm] min-h-[70mm] max-h-[88mm] bg-white flex items-center justify-center p-0 mx-auto">
+                        <div className="flex-1 my-auto flex flex-col justify-center items-center space-y-3 py-1 w-full">
+                          <div className="w-full max-w-[155mm] max-h-[74mm] bg-white flex items-center justify-center p-0 mx-auto">
                             <img 
                               src={pagePhotos[0]} 
                               alt={`${car.brand} ${car.model} - foto 1`}
-                              className="max-w-full max-h-[85mm] w-auto h-auto object-contain block mx-auto my-auto"
+                              className="max-w-full max-h-[72mm] w-auto h-auto object-contain block mx-auto my-auto"
                             />
                           </div>
-                          <div className="w-full max-w-[155mm] min-h-[70mm] max-h-[88mm] bg-white flex items-center justify-center p-0 mx-auto">
+                          <div className="w-full max-w-[155mm] max-h-[74mm] bg-white flex items-center justify-center p-0 mx-auto">
                             <img 
                               src={pagePhotos[1]} 
                               alt={`${car.brand} ${car.model} - foto 2`}
-                              className="max-w-full max-h-[85mm] w-auto h-auto object-contain block mx-auto my-auto"
+                              className="max-w-full max-h-[72mm] w-auto h-auto object-contain block mx-auto my-auto"
                             />
                           </div>
                         </div>
@@ -1069,32 +1069,32 @@ export default function PdfPrintReportModal({
 
                       {/* 3 Photos: 2 on top row + 1 centered in middle on bottom row */}
                       {includePhotos && pagePhotos.length === 3 && (
-                        <div className="flex-1 my-auto flex flex-col justify-center space-y-4 py-2 w-full">
+                        <div className="flex-1 my-auto flex flex-col justify-center space-y-3 py-1 w-full">
                           {/* Top Row: 2 Photos */}
-                          <div className="grid grid-cols-2 gap-4 w-full items-center">
-                            <div className="w-full h-full min-h-[70mm] max-h-[85mm] bg-white flex items-center justify-center p-0">
+                          <div className="grid grid-cols-2 gap-3 w-full items-center">
+                            <div className="w-full max-h-[72mm] bg-white flex items-center justify-center p-0">
                               <img 
                                 src={pagePhotos[0]} 
                                 alt={`${car.brand} ${car.model} - foto 1`}
-                                className="max-w-full max-h-[82mm] w-auto h-auto object-contain block mx-auto my-auto"
+                                className="max-w-full max-h-[70mm] w-auto h-auto object-contain block mx-auto my-auto"
                               />
                             </div>
-                            <div className="w-full h-full min-h-[70mm] max-h-[85mm] bg-white flex items-center justify-center p-0">
+                            <div className="w-full max-h-[72mm] bg-white flex items-center justify-center p-0">
                               <img 
                                 src={pagePhotos[1]} 
                                 alt={`${car.brand} ${car.model} - foto 2`}
-                                className="max-w-full max-h-[82mm] w-auto h-auto object-contain block mx-auto my-auto"
+                                className="max-w-full max-h-[70mm] w-auto h-auto object-contain block mx-auto my-auto"
                               />
                             </div>
                           </div>
 
                           {/* Bottom Row: 1 Photo Centered in Middle */}
                           <div className="w-full flex justify-center items-center">
-                            <div className="w-1/2 max-w-[90mm] h-full min-h-[70mm] max-h-[85mm] bg-white flex items-center justify-center p-0 mx-auto">
+                            <div className="w-1/2 max-w-[90mm] max-h-[72mm] bg-white flex items-center justify-center p-0 mx-auto">
                               <img 
                                 src={pagePhotos[2]} 
                                 alt={`${car.brand} ${car.model} - foto 3`}
-                                className="max-w-full max-h-[82mm] w-auto h-auto object-contain block mx-auto my-auto"
+                                className="max-w-full max-h-[70mm] w-auto h-auto object-contain block mx-auto my-auto"
                               />
                             </div>
                           </div>
@@ -1103,16 +1103,16 @@ export default function PdfPrintReportModal({
 
                       {/* 4 Photos: 2x2 Grid */}
                       {includePhotos && pagePhotos.length >= 4 && (
-                        <div className="grid grid-cols-2 gap-4 flex-1 my-auto items-center py-2">
+                        <div className="grid grid-cols-2 gap-3 flex-1 my-auto items-center py-1">
                           {pagePhotos.map((photoUrl, pIdx) => (
                             <div 
                               key={pIdx} 
-                              className="w-full h-full min-h-[70mm] max-h-[90mm] bg-white flex items-center justify-center p-0"
+                              className="w-full max-h-[72mm] bg-white flex items-center justify-center p-0"
                             >
                               <img 
                                 src={photoUrl} 
                                 alt={`${car.brand} ${car.model} - foto ${pageIndex * 4 + pIdx + 1}`}
-                                className="max-w-full max-h-[88mm] w-auto h-auto object-contain block mx-auto my-auto"
+                                className="max-w-full max-h-[70mm] w-auto h-auto object-contain block mx-auto my-auto"
                               />
                             </div>
                           ))}
@@ -1121,9 +1121,9 @@ export default function PdfPrintReportModal({
 
                       {/* Clean Professional Showcase Space when no photos uploaded or 'Senza Foto' chosen */}
                       {(!includePhotos || pagePhotos.length === 0) && (
-                        <div className="flex-1 my-auto flex flex-col items-center justify-center py-12 text-center text-slate-400">
-                          <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-3">
-                            <Car className="w-10 h-10 text-slate-300" />
+                        <div className="flex-1 my-auto flex flex-col items-center justify-center py-8 text-center text-slate-400">
+                          <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-2">
+                            <Car className="w-8 h-8 text-slate-300" />
                           </div>
                           <p className="text-sm font-bold text-slate-700 font-sans tracking-wide">
                             {car.brand} {car.model}
@@ -1135,9 +1135,9 @@ export default function PdfPrintReportModal({
                       )}
 
                       {/* Footer Sheet Margin */}
-                      <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-sans uppercase tracking-widest">
-                        <span>BOOK AUTO PB</span>
-                        <span>{car.brand} {car.model} — Pagina {currentPageNum} di {totalCarPages}</span>
+                      <div className="pt-2 pb-0 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-sans uppercase tracking-widest shrink-0 mt-auto">
+                        <span className="font-bold">BOOK AUTO PB</span>
+                        <span className="font-semibold">{car.brand} {car.model} — Pagina {currentPageNum} di {totalCarPages}</span>
                       </div>
 
                     </div>,
@@ -1155,14 +1155,14 @@ export default function PdfPrintReportModal({
                     <div 
                       key={`${car.id}_extended_page`} 
                       data-car-id={car.id}
-                      className="print-car-page print-main-sheet-page bg-white text-slate-900 border border-slate-200 print:border-none p-[12mm] flex flex-col justify-between box-border shrink-0 my-0 mx-auto"
+                      className="print-car-page print-main-sheet-page bg-white text-slate-900 border border-slate-200 print:border-none p-[8mm] sm:p-[10mm] flex flex-col justify-between box-border shrink-0 my-0 mx-auto"
                       style={{
                         width: '210mm',
                         minWidth: '210mm',
                         maxWidth: '210mm',
-                        height: '297mm',
-                        minHeight: '297mm',
-                        maxHeight: '297mm',
+                        height: '295mm',
+                        minHeight: '290mm',
+                        maxHeight: '295mm',
                         boxSizing: 'border-box'
                       }}
                     >
@@ -1323,8 +1323,8 @@ export default function PdfPrintReportModal({
                       </div>
 
                       {/* Footer Sheet Margin */}
-                      <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-sans uppercase tracking-widest">
-                        <span>BOOK AUTO PB</span>
+                      <div className="pt-2 pb-0 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-sans uppercase tracking-widest shrink-0 mt-auto">
+                        <span className="font-bold">BOOK AUTO PB</span>
                         <span>{car.brand} {car.model} — Pagina {extendedPageNum} di {totalCarPages} (SCHEDA TECNICA & MANUTENZIONE)</span>
                       </div>
                     </div>,
@@ -1349,14 +1349,14 @@ export default function PdfPrintReportModal({
                     <div 
                       key={`${car.id}_doc_${doc.id || docIdx}`} 
                       data-car-id={car.id}
-                      className="print-car-page print-doc-page bg-white text-slate-900 border border-slate-200 print:border-none p-[10mm] flex flex-col justify-between box-border shrink-0 my-0 mx-auto"
+                      className="print-car-page print-doc-page bg-white text-slate-900 border border-slate-200 print:border-none p-[8mm] sm:p-[10mm] flex flex-col justify-between box-border shrink-0 my-0 mx-auto"
                       style={{
                         width: '210mm',
                         minWidth: '210mm',
                         maxWidth: '210mm',
-                        height: '297mm',
-                        minHeight: '297mm',
-                        maxHeight: '297mm',
+                        height: '295mm',
+                        minHeight: '290mm',
+                        maxHeight: '295mm',
                         boxSizing: 'border-box'
                       }}
                     >
@@ -1420,8 +1420,8 @@ export default function PdfPrintReportModal({
                       </div>
 
                       {/* Footer Sheet Margin */}
-                      <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-sans uppercase tracking-widest">
-                        <span>BOOK AUTO PB</span>
+                      <div className="pt-2 pb-0 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-sans uppercase tracking-widest shrink-0 mt-auto">
+                        <span className="font-bold">BOOK AUTO PB</span>
                         <span>{car.brand} {car.model} — Pagina {docPageNum} di {totalCarPages} ({docTitleClean})</span>
                       </div>
                     </div>,
