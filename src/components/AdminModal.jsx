@@ -42,6 +42,8 @@ import {
   USER_ROLES, 
   getBackgroundImages, 
   saveBackgroundImages,
+  getActiveBackground,
+  setActiveBackground,
   getCurrentUser,
   setCurrentUser,
   getMasterRecoveryPin,
@@ -85,10 +87,13 @@ export default function AdminModal({
   setShowExpirationBar,
   clientPermissions,
   onPermissionsUpdated,
-  onOpenGuideModal
+  onOpenGuideModal,
+  activeBackground,
+  onSelectActiveBackground
 }) {
   useBodyScrollLock(true);
   const [activeTab, setActiveTab] = useState('tools'); // 'tools' | 'permissions' | 'users' | 'backgrounds' | 'locations' | 'documents'
+  const [activeBg, setActiveBg] = useState(() => activeBackground || getActiveBackground());
 
   // Documents & Scans Management State
   const [docsSearchQuery, setDocsSearchQuery] = useState('');
@@ -588,12 +593,13 @@ export default function AdminModal({
     setUsersList(getUsers());
     setBackgroundsList(getBackgroundImages());
     setLocationsList(getLocations());
+    setActiveBg(activeBackground || getActiveBackground());
     syncUsersWithCloud().then(cloudUsers => {
       if (Array.isArray(cloudUsers) && cloudUsers.length > 0) {
         setUsersList(cloudUsers);
       }
     });
-  }, []);
+  }, [activeBackground]);
 
   // Add Location
   const handleAddLocationSubmit = (e) => {
@@ -727,6 +733,17 @@ export default function AdminModal({
     const updated = backgrounds.filter((_, i) => i !== index);
     setBackgroundsList(updated);
     saveBackgroundImages(updated);
+  };
+
+  // Set Active Background for entire site
+  const handleSelectActiveBackground = (bgUrl) => {
+    setActiveBg(bgUrl);
+    setActiveBackground(bgUrl);
+    if (onSelectActiveBackground) {
+      onSelectActiveBackground(bgUrl);
+    }
+    setBgMsg('🌟 Sfondo impostato come sfondo attivo del sito!');
+    setTimeout(() => setBgMsg(''), 4000);
   };
 
   // Save Email Settings across Local & Supabase Cloud
@@ -1948,27 +1965,89 @@ export default function AdminModal({
 
               {/* Backgrounds Gallery Grid */}
               <div className="space-y-3">
-                <h4 className="font-bold text-amber-400 uppercase tracking-wider text-[11px]">
-                  Galleria Sfondi Attivi ({backgrounds.length})
-                </h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <h4 className="font-bold text-amber-400 uppercase tracking-wider text-[11px] flex items-center space-x-2">
+                    <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Galleria Sfondi Attivi ({backgrounds.length})</span>
+                  </h4>
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    Clicca su una foto o premi <strong className="text-amber-400">"Usa come Sfondo"</strong> per impostarla come sfondo principale del sito
+                  </span>
+                </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {backgrounds.map((bgUrl, idx) => (
-                    <div 
-                      key={idx}
-                      className="relative group aspect-video rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-1 flex items-center justify-center"
-                    >
-                      <img src={bgUrl} alt="" className="w-full h-full object-cover rounded-lg" />
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteBackground(idx)}
-                        className="absolute top-2 right-2 p-1.5 bg-slate-950/80 text-slate-300 hover:text-rose-400 rounded-lg border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Rimuovi Foto Sfondo"
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {backgrounds.map((bgUrl, idx) => {
+                    const isActive = activeBg === bgUrl || (!activeBg && typeof bgUrl === 'string' && bgUrl.includes('military_camo_bg'));
+                    const isMilitary = typeof bgUrl === 'string' && (bgUrl.includes('military_camo_bg') || bgUrl.includes('camo'));
+
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={() => handleSelectActiveBackground(bgUrl)}
+                        className={`relative group aspect-video rounded-2xl overflow-hidden border transition-all cursor-pointer ${
+                          isActive 
+                            ? 'border-amber-400 ring-2 ring-amber-400/50 shadow-xl shadow-amber-500/20 scale-[1.01]' 
+                            : 'border-slate-800 hover:border-amber-500/50 bg-slate-950'
+                        }`}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                        <img 
+                          src={bgUrl} 
+                          alt="" 
+                          className="w-full h-full object-cover rounded-xl transition-transform duration-300 group-hover:scale-105" 
+                        />
+                        
+                        {/* Overlay Badges */}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10 pointer-events-none">
+                          {isMilitary && (
+                            <span className="px-2.5 py-1 bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 rounded-lg text-[10px] font-bold shadow-md flex items-center space-x-1.5 backdrop-blur-sm">
+                              <span>🪖</span>
+                              <span>Mimetico Militare</span>
+                            </span>
+                          )}
+                          {isActive && (
+                            <span className="px-2.5 py-1 bg-amber-500 text-slate-950 rounded-lg text-[10px] font-extrabold shadow-md flex items-center space-x-1 backdrop-blur-sm">
+                              <span>✓</span>
+                              <span>Sfondo Attivo</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Top-Right Trash Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteBackground(idx);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-slate-950/80 text-slate-300 hover:text-rose-400 rounded-lg border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                          title="Rimuovi Foto Sfondo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Bottom Action Bar */}
+                        <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent flex items-center justify-between z-10">
+                          {isActive ? (
+                            <span className="text-[11px] font-bold text-amber-400 flex items-center space-x-1">
+                              <span>🌟</span>
+                              <span>In uso come sfondo</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectActiveBackground(bgUrl);
+                              }}
+                              className="px-2.5 py-1 bg-amber-500/90 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-[11px] transition-all flex items-center space-x-1 shadow-md"
+                            >
+                              <span>Usa come Sfondo</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -17,7 +17,15 @@ import AppGuideModal from './components/AppGuideModal';
 import { SlidersHorizontal, ArrowUpDown, Plus, RotateCcw, Car as CarIcon, Sparkles, CheckSquare, Printer, Square, Trash2, Bell, User } from 'lucide-react';
 import { getLogoForBrand, getCustomBrandLogos, DEFAULT_BRAND_LOGOS, isValidBrandLogo, getCanonicalBrandName, normalizeBrandName } from './utils/brandLogos';
 import { getVehicleExpirations } from './utils/notifications';
-import { getCurrentUser, setCurrentUser as setCurrentUserInStorage, logoutUser, syncUsersWithCloud, syncBackgroundsWithCloud } from './utils/auth';
+import { 
+  getCurrentUser, 
+  setCurrentUser as setCurrentUserInStorage, 
+  logoutUser, 
+  syncUsersWithCloud, 
+  syncBackgroundsWithCloud,
+  getActiveBackground,
+  setActiveBackground
+} from './utils/auth';
 import { syncLocationsWithCloud } from './utils/locations';
 import { getOwners, syncOwnersWithCloud } from './utils/owners';
 import { checkAndTriggerAutomaticEmailAlerts, syncEmailConfigWithCloud } from './utils/emailAlerts';
@@ -114,6 +122,19 @@ export default function App() {
     const saved = localStorage.getItem('book_auto_pb_expiration_bar');
     return saved !== null ? JSON.parse(saved) : true;
   });
+
+  // Active Background Wallpaper state
+  const [activeBackground, setActiveBackgroundState] = useState(() => {
+    return getActiveBackground();
+  });
+
+  const handleSelectActiveBackground = (bgUrl) => {
+    setActiveBackgroundState(bgUrl);
+    setActiveBackground(bgUrl);
+    if (bgUrl && bgUrl.includes('military_camo')) {
+      setTheme('military');
+    }
+  };
 
   // Active Modals
   const [selectedCar, setSelectedCar] = useState(null);
@@ -994,6 +1015,19 @@ export default function App() {
   return (
     <div className={`min-h-screen flex flex-col pb-16 relative transition-colors duration-500 ${theme === 'military' ? 'theme-military' : ''}`}>
       
+      {/* Dynamic Active Custom Background Wallpaper */}
+      {activeBackground && (
+        <div 
+          className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-cover bg-center bg-no-repeat transition-all duration-700"
+          style={{
+            backgroundImage: activeBackground.includes('military_camo') 
+              ? `linear-gradient(to bottom, rgba(12, 17, 10, 0.78), rgba(8, 12, 7, 0.88)), url(${activeBackground})`
+              : `linear-gradient(to bottom, rgba(3, 7, 18, 0.82), rgba(3, 7, 18, 0.92)), url(${activeBackground})`,
+            backgroundAttachment: 'fixed'
+          }}
+        />
+      )}
+      
       {/* Soft Ambient Side Glow Lights (Olive/Khaki for Military or Azure/Blue for Classic) */}
       {showSideGlow && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
@@ -1387,6 +1421,8 @@ export default function App() {
             syncPermissionsToSupabase(updated);
           }}
           onOpenGuideModal={() => setIsGuideModalOpen(true)}
+          activeBackground={activeBackground}
+          onSelectActiveBackground={handleSelectActiveBackground}
         />
       )}
 

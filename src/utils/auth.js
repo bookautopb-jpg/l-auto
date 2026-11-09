@@ -47,6 +47,7 @@ export const USER_ROLES = {
 
 export const DEFAULT_BACKGROUNDS = [
   "./images/military_camo_bg.jpg",
+  "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=1920&q=80",
   "./images/bg_1.jpg",
   "./images/bg_2.jpg",
   "./images/bg_3.jpg",
@@ -341,12 +342,37 @@ export async function authenticateUserAsync(identifier, password) {
   return null;
 }
 
+const ACTIVE_BG_KEY = 'book_auto_pb_active_bg';
+
+export function getActiveBackground() {
+  if (typeof window === 'undefined') return './images/military_camo_bg.jpg';
+  try {
+    const saved = localStorage.getItem(ACTIVE_BG_KEY);
+    if (saved) return saved;
+  } catch (e) {}
+  return './images/military_camo_bg.jpg';
+}
+
+export function setActiveBackground(bgUrl) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ACTIVE_BG_KEY, bgUrl);
+  } catch (e) {}
+}
+
 export function getBackgroundImages() {
   const saved = localStorage.getItem(BACKGROUNDS_STORAGE_KEY);
   if (saved) {
     try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      let parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Guarantee military_camo_bg is ALWAYS present at the front of the gallery!
+        if (!parsed.some(bg => typeof bg === 'string' && bg.includes('military_camo_bg'))) {
+          parsed = ['./images/military_camo_bg.jpg', ...parsed];
+          localStorage.setItem(BACKGROUNDS_STORAGE_KEY, JSON.stringify(parsed));
+        }
+        return parsed;
+      }
     } catch (e) {
       console.error('Error parsing background storage:', e);
     }
@@ -367,8 +393,14 @@ export async function syncBackgroundsWithCloud() {
   try {
     const remote = await fetchBackgroundsFromSupabase();
     if (Array.isArray(remote) && remote.length > 0) {
-      localStorage.setItem(BACKGROUNDS_STORAGE_KEY, JSON.stringify(remote));
-      return remote;
+      let finalRemote = [...remote];
+      // Guarantee military_camo_bg is ALWAYS present in remote sync
+      if (!finalRemote.some(bg => typeof bg === 'string' && bg.includes('military_camo_bg'))) {
+        finalRemote = ['./images/military_camo_bg.jpg', ...finalRemote];
+        syncBackgroundsToSupabase(finalRemote).catch(() => {});
+      }
+      localStorage.setItem(BACKGROUNDS_STORAGE_KEY, JSON.stringify(finalRemote));
+      return finalRemote;
     } else {
       const current = getBackgroundImages();
       await syncBackgroundsToSupabase(current);
