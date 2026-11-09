@@ -49,10 +49,10 @@ export function mapRowToCar(row) {
     horsepower: row.horsepower,
     esemplari: row.esemplari,
     images: carImages,
-    pageImage: row.pageimage || row.pageImage || extra.pageImage || (carImages[0] || ''),
+    pageImage: carImages.length > 0 ? (row.pageimage || row.pageImage || extra.pageImage || carImages[0] || '') : '',
     isFavorite: Boolean(row.isfavorite ?? row.isFavorite ?? extra.isFavorite),
     notes: extra.userNotes !== undefined ? extra.userNotes : (row.notes || ''),
-    mainPhoto: row.mainphoto || row.mainPhoto || extra.mainPhoto || (carImages[0] || ''),
+    mainPhoto: carImages.length > 0 ? (row.mainphoto || row.mainPhoto || extra.mainPhoto || carImages[0] || '') : '',
     logoImg: row.logoimg || row.logoImg || extra.logoImg || '',
     carPhotos: carImages,
     documents: Array.isArray(extra.documents) ? extra.documents : []
@@ -107,10 +107,10 @@ export function mapCarToRow(car) {
     horsepower: car.horsepower || '',
     esemplari: car.esemplari || '',
     images: resolvedImages,
-    pageimage: car.pageImage || resolvedImages[0] || '',
+    pageimage: resolvedImages.length > 0 ? (car.pageImage || resolvedImages[0] || '') : '',
     isfavorite: Boolean(car.isFavorite),
     notes: JSON.stringify(extraPayload),
-    mainphoto: car.mainPhoto || resolvedImages[0] || '',
+    mainphoto: resolvedImages.length > 0 ? (car.mainPhoto || resolvedImages[0] || '') : '',
     logoimg: car.logoImg || '',
     carphotos: resolvedImages
   };

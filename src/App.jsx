@@ -216,77 +216,10 @@ export default function App() {
         localCars = formatCarImages(filterOutDeletedCars(savedLocalCars));
       }
 
-      // Fetch baseline cars.json (always guaranteed to have catalog & baseline expirations)
-      let baselineCars = [];
-      try {
-        const res = await fetch(`${import.meta.env.BASE_URL}data/cars.json?t=${Date.now()}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (Array.isArray(json)) baselineCars = formatCarImages(filterOutDeletedCars(json));
-        }
-      } catch (err) {
-        console.warn('Error loading baseline cars.json:', err);
-      }
-
-      // Helper to merge baseline expirations, images and documents if missing or broken in a car list
-      const mergeWithBaseline = (carList) => {
-        if (!Array.isArray(carList) || baselineCars.length === 0) return filterOutDeletedCars(carList);
-        const filtered = filterOutDeletedCars(carList);
-        const merged = filtered.map(c => {
-          const base = baselineCars.find(b => String(b.id) === String(c.id));
-          if (!base) return c;
-          const currentDocs = Array.isArray(c.documents) ? c.documents : [];
-          const baseDocs = Array.isArray(base.documents) ? base.documents : [];
-          const mergedDocs = currentDocs.length > 0 ? currentDocs : baseDocs;
-
-          // Always ensure valid images: fallback to base if local images are empty or missing
-          const hasLocalImages = Array.isArray(c.images) && c.images.length > 0 && c.images.some(img => typeof img === 'string' && img.trim().length > 0);
-          const validImages = hasLocalImages ? c.images : (base.images || []);
-          const validMain = c.mainPhoto || base.mainPhoto || (validImages[0] || '');
-          const validLogo = (isValidBrandLogo(c.logoImg) ? c.logoImg : null) ||
-                            (isValidBrandLogo(base.logoImg) ? base.logoImg : null) ||
-                            getLogoForBrand(c.brand) || '';
-
-          return {
-            ...c,
-            images: validImages,
-            carPhotos: (Array.isArray(c.carPhotos) && c.carPhotos.length > 0) ? c.carPhotos : validImages,
-            mainPhoto: validMain,
-            pageImage: c.pageImage || base.pageImage || validMain,
-            logoImg: validLogo,
-            proprietario: c.proprietario !== undefined ? c.proprietario : (base.proprietario || ''),
-            scadenzaBollo: c.scadenzaBollo || base.scadenzaBollo || '',
-            scadenzaAssicurazione: c.scadenzaAssicurazione || base.scadenzaAssicurazione || '',
-            scadenzaRevisione: c.scadenzaRevisione || base.scadenzaRevisione || '',
-            prossimoTagliandoData: c.prossimoTagliandoData || base.prossimoTagliandoData || '',
-            documents: mergedDocs
-          };
-        });
-
-        // Also include any new cars from baselineCars (e.g. FIAT 500s) that might be missing in local storage
-        const existingIds = new Set(filtered.map(c => String(c.id)));
-        const missingFromLocal = baselineCars.filter(b => !existingIds.has(String(b.id)));
-        return [...missingFromLocal, ...merged];
-      };
-
-      // Check if running in local development / test mode
-      const isLocalhost = typeof window !== 'undefined' && (
-        window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1' ||
-        window.location.hostname === '0.0.0.0'
-      );
-
-      // In local mode, immediately display local baseline so app opens instantly with zero latency
-      if (isLocalhost) {
-        let mergedLocal = baselineCars;
-        if (localCars && localCars.length > 0) {
-          mergedLocal = mergeWithBaseline(localCars);
-        }
-        if (mergedLocal && mergedLocal.length > 0) {
-          setCars(mergedLocal);
-          saveCarsToLocal(mergedLocal);
-          setLoading(false);
-        }
+      // If local storage has cars, show them immediately so there's zero UI latency
+      if (localCars && localCars.length > 0) {
+        setCars(localCars);
+        setLoading(false);
       }
 
       // Fetch latest client permissions from Supabase Cloud
@@ -297,101 +230,63 @@ export default function App() {
         }
       }).catch(err => console.warn('Permissions initial fetch:', err));
 
-      // 2. Fetch latest shared cars from Supabase Cloud (Central truth)
+      // 2. Fetch latest shared cars from Supabase Cloud (The central dynamic database)
       const supabaseCars = await fetchCarsFromSupabase();
       if (supabaseCars && supabaseCars.length > 0) {
-        const activeSupabase = filterOutDeletedCars(supabaseCars);
-        let formattedSupabase = formatCarImages(activeSupabase);
-        formattedSupabase = mergeWithBaseline(formattedSupabase);
+        const activeSupabase = formatCarImages(filterOutDeletedCars(supabaseCars));
 
-        // Merge any local documents that haven't synced to Supabase yet
-        if (localCars && localCars.length > 0) {
-          formattedSupabase = formattedSupabase.map(sc => {
-            const lc = localCars.find(l => String(l.id) === String(sc.id));
-            if (!lc) return sc;
+        // Preserve heavy cached document binary data (fileData/dataUrl) if present on this device
+        const finalCars = activeSupabase.map(sc => {
+          if (!localCars) return sc;
+          const lc = localCars.find(l => String(l.id) === String(sc.id));
+          if (!lc) return sc;
 
-            // If local car has images, respect local images (preserves additions and deletions on this device)
-            const scImgs = Array.isArray(sc.images) ? sc.images : [];
-            const lcImgs = Array.isArray(lc.images) ? lc.images : [];
-            const finalImgs = lcImgs.length > 0 ? lcImgs : scImgs;
-
-            const scDocs = Array.isArray(sc.documents) ? sc.documents : [];
-            const lcDocs = Array.isArray(lc.documents) ? lc.documents : [];
-            let mergedDocs = scDocs;
-            if (lcDocs.length > 0 && scDocs.length === 0) {
-              mergedDocs = lcDocs;
-            } else if (lcDocs.length > 0 && scDocs.length > 0) {
-              const map = new Map();
-              scDocs.forEach(d => { if (d && d.id) map.set(d.id, d); });
-              lcDocs.forEach(d => {
-                if (d && d.id) {
-                  const existing = map.get(d.id);
-                  if (existing) {
-                    const localHasData = Boolean(d.fileData || d.dataUrl || d.url);
-                    map.set(d.id, {
-                      ...existing,
-                      ...d,
-                      fileData: localHasData ? (d.fileData || d.dataUrl) : (existing.fileData || existing.dataUrl),
-                      dataUrl: localHasData ? (d.dataUrl || d.fileData) : (existing.dataUrl || existing.fileData),
-                      url: localHasData ? (d.url || d.fileData) : (existing.url || existing.fileData)
-                    });
-                  } else {
-                    map.set(d.id, d);
-                  }
-                }
-              });
-              mergedDocs = Array.from(map.values());
+          const lcDocs = Array.isArray(lc.documents) ? lc.documents : [];
+          const scDocs = Array.isArray(sc.documents) ? sc.documents : [];
+          const docsWithCachedData = scDocs.map(d => {
+            const ld = lcDocs.find(x => x && x.id === d.id);
+            if (ld && !d.fileData && !d.dataUrl && (ld.fileData || ld.dataUrl)) {
+              return { ...d, fileData: ld.fileData || ld.dataUrl, dataUrl: ld.dataUrl || ld.fileData };
             }
-
-            return {
-              ...sc,
-              images: finalImgs,
-              carPhotos: finalImgs,
-              mainPhoto: finalImgs[0] || sc.mainPhoto || lc.mainPhoto,
-              pageImage: finalImgs[0] || sc.pageImage || lc.pageImage,
-              documents: mergedDocs
-            };
+            return d;
           });
-        }
 
-        // Check if this device has expiration dates that haven't reached Supabase yet (e.g. Admin device)
-        if (localCars && localCars.length > 0) {
-          const localHasExpirations = localCars.some(c => c.scadenzaBollo || c.scadenzaAssicurazione || c.scadenzaRevisione || c.prossimoTagliandoData);
-          const supabaseHasExpirations = formattedSupabase.some(c => c.scadenzaBollo || c.scadenzaAssicurazione || c.scadenzaRevisione || c.prossimoTagliandoData);
+          return {
+            ...sc,
+            documents: docsWithCachedData
+          };
+        });
 
-          if (localHasExpirations && !supabaseHasExpirations) {
-            console.log('🚀 Pushing local expirations to Supabase Cloud so all users see them...');
-            setCars(localCars);
-            saveCarsToLocal(localCars);
-            syncCarsToSupabase(localCars);
+        // Supabase Cloud is authoritative: respect all empty fields, additions, deletions!
+        setCars(finalCars);
+        saveCarsToLocal(finalCars);
+        setLoading(false);
+        return;
+      }
+
+      // If Supabase is offline or empty, use localCars directly
+      if (localCars && localCars.length > 0) {
+        setCars(localCars);
+        setLoading(false);
+        return;
+      }
+
+      // 3. Fallback to cars.json ONLY if both Supabase and LocalStorage are completely empty (fresh install)
+      try {
+        const res = await fetch(`${import.meta.env.BASE_URL}data/cars.json?t=${Date.now()}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json) && json.length > 0) {
+            const initialSeed = formatCarImages(filterOutDeletedCars(json));
+            setCars(initialSeed);
+            saveCarsToLocal(initialSeed);
+            syncCarsToSupabase(initialSeed);
             setLoading(false);
             return;
           }
         }
-
-        // Supabase has the shared truth! Update state and local storage
-        setCars(formattedSupabase);
-        saveCarsToLocal(formattedSupabase);
-        setLoading(false);
-        return;
-      }
-
-      // If Supabase is empty or offline, use localCars with baseline merge
-      if (localCars && localCars.length > 0) {
-        const mergedLocal = mergeWithBaseline(localCars);
-        setCars(mergedLocal);
-        saveCarsToLocal(mergedLocal);
-        setLoading(false);
-        return;
-      }
-
-      // 3. Fallback to default baselineCars
-      if (baselineCars && baselineCars.length > 0) {
-        setCars(baselineCars);
-        saveCarsToLocal(baselineCars);
-        syncCarsToSupabase(baselineCars);
-        setLoading(false);
-        return;
+      } catch (err) {
+        console.warn('Error loading initial seed cars.json:', err);
       }
 
       setLoading(false);
@@ -449,12 +344,17 @@ export default function App() {
             const current = prev[idx];
             const currentDocs = Array.isArray(current.documents) ? current.documents : [];
             const carDocs = Array.isArray(car.documents) ? car.documents : [];
-            const mergedDocs = carDocs.length > 0 ? carDocs : currentDocs;
+            const docsWithCachedData = carDocs.map(d => {
+              const ld = currentDocs.find(x => x && x.id === d.id);
+              if (ld && !d.fileData && !d.dataUrl && (ld.fileData || ld.dataUrl)) {
+                return { ...d, fileData: ld.fileData || ld.dataUrl, dataUrl: ld.dataUrl || ld.fileData };
+              }
+              return d;
+            });
 
             updated[idx] = {
-              ...current,
               ...car,
-              documents: mergedDocs
+              documents: docsWithCachedData
             };
           } else {
             updated = [car, ...prev];
@@ -515,29 +415,19 @@ export default function App() {
             const prevCar = (prev || []).find(p => String(p.id) === String(sc.id));
             if (!prevCar) return sc;
 
-            const prevImgs = Array.isArray(prevCar.images) ? prevCar.images : [];
-            const scImgs = Array.isArray(sc.images) ? sc.images : [];
-            const finalImgs = prevImgs.length > 0 ? prevImgs : scImgs;
-
             const prevDocs = Array.isArray(prevCar.documents) ? prevCar.documents : [];
             const scDocs = Array.isArray(sc.documents) ? sc.documents : [];
-            let mergedDocs = scDocs;
-            if (prevDocs.length > 0 && scDocs.length === 0) {
-              mergedDocs = prevDocs;
-            } else if (prevDocs.length > 0 && scDocs.length > 0) {
-              const map = new Map();
-              scDocs.forEach(d => { if (d && d.id) map.set(d.id, d); });
-              prevDocs.forEach(d => { if (d && d.id) map.set(d.id, d); });
-              mergedDocs = Array.from(map.values());
-            }
+            const docsWithCachedData = scDocs.map(d => {
+              const ld = prevDocs.find(x => x && x.id === d.id);
+              if (ld && !d.fileData && !d.dataUrl && (ld.fileData || ld.dataUrl)) {
+                return { ...d, fileData: ld.fileData || ld.dataUrl, dataUrl: ld.dataUrl || ld.fileData };
+              }
+              return d;
+            });
 
             return {
               ...sc,
-              images: finalImgs,
-              carPhotos: finalImgs,
-              mainPhoto: finalImgs[0] || sc.mainPhoto || prevCar.mainPhoto,
-              pageImage: finalImgs[0] || sc.pageImage || prevCar.pageImage,
-              documents: mergedDocs
+              documents: docsWithCachedData
             };
           });
 
@@ -570,19 +460,19 @@ export default function App() {
     };
   }, []);
 
-  // Manual Cloud Data Refresh Handler with Smart 2-Way Merge (Zero Data Loss)
+  // Manual Cloud Data Refresh Handler with Centralized Dynamic Sync (Zero Data Loss)
   const handleRefreshCloudData = async () => {
     setIsSyncing(true);
     try {
       // 1. First sync any deleted cars with cloud
       await syncDeletedCarsWithCloud();
 
-      // 2. IMPORTANT: Push current local cars (with all local photos/docs) to Supabase Cloud FIRST!
+      // 2. Push current local cars (with all local photos/docs) to Supabase Cloud FIRST!
       if (cars && cars.length > 0) {
         await syncCarsToSupabase(cars);
       }
 
-      // 3. Fetch latest data from Supabase Cloud
+      // 3. Fetch latest dynamic data from Supabase Cloud
       const freshSupabase = await fetchCarsFromSupabase();
       let remoteCars = [];
       if (freshSupabase && freshSupabase.length > 0) {
@@ -597,46 +487,28 @@ export default function App() {
         }
       }
 
-      // 4. Perform an intelligent 2-way merge:
-      // NEVER overwrite local photos or documents if local has more or newer ones!
-      const mergedCars = [...(cars || [])];
+      // 4. Update with latest Cloud data, preserving local cached PDF binary data without resurrecting deleted items
+      const finalCars = remoteCars.map(rc => {
+        const localCar = (cars || []).find(c => String(c.id) === String(rc.id));
+        if (!localCar) return rc;
 
-      remoteCars.forEach(remoteCar => {
-        const localIdx = mergedCars.findIndex(c => String(c.id) === String(remoteCar.id));
-        if (localIdx === -1) {
-          // New car from cloud that doesn't exist locally
-          mergedCars.push(remoteCar);
-        } else {
-          const localCar = mergedCars[localIdx];
-          
-          // Images: local car state is authoritative for its photo set!
-          // - When user uploads a new photo: localImgs has it, so it's kept and pushed to Cloud.
-          // - When user deletes a photo: localImgs does NOT have it, so the deleted photo stays deleted and is NEVER resurrected!
-          const localImgs = Array.isArray(localCar.images) ? localCar.images : [];
-          const remoteImgs = Array.isArray(remoteCar.images) ? remoteCar.images : [];
-          const finalImages = localImgs.length > 0 ? localImgs : remoteImgs;
+        const localDocs = Array.isArray(localCar.documents) ? localCar.documents : [];
+        const rcDocs = Array.isArray(rc.documents) ? rc.documents : [];
+        const docsWithCachedData = rcDocs.map(d => {
+          const ld = localDocs.find(x => x && x.id === d.id);
+          if (ld && !d.fileData && !d.dataUrl && (ld.fileData || ld.dataUrl)) {
+            return { ...d, fileData: ld.fileData || ld.dataUrl, dataUrl: ld.dataUrl || ld.fileData };
+          }
+          return d;
+        });
 
-          // Merge documents: keep all local and remote documents by ID
-          const localDocs = Array.isArray(localCar.documents) ? localCar.documents : [];
-          const remoteDocs = Array.isArray(remoteCar.documents) ? remoteCar.documents : [];
-          const docsMap = new Map();
-          remoteDocs.forEach(d => { if (d && d.id) docsMap.set(d.id, d); });
-          localDocs.forEach(d => { if (d && d.id) docsMap.set(d.id, d); });
-          const mergedDocs = Array.from(docsMap.values());
-
-          mergedCars[localIdx] = {
-            ...remoteCar,
-            ...localCar, // Local edits take precedence
-            images: finalImages,
-            carPhotos: finalImages,
-            mainPhoto: finalImages[0] || localCar.mainPhoto || remoteCar.mainPhoto,
-            pageImage: finalImages[0] || localCar.pageImage || remoteCar.pageImage,
-            documents: mergedDocs
-          };
-        }
+        return {
+          ...rc,
+          documents: docsWithCachedData
+        };
       });
 
-      const formatted = formatCarImages(mergedCars);
+      const formatted = formatCarImages(finalCars);
       setCars(formatted);
       saveCarsToLocal(formatted);
 
@@ -653,17 +525,18 @@ export default function App() {
         }).catch(e => console.warn('Sync cars.json in local mode:', e));
       }
 
-      // 6. Push final merged dataset back to Supabase to keep Cloud 100% updated
+      // 6. Push final dataset back to Supabase to keep Cloud 100% updated
       await syncCarsToSupabase(formatted);
 
-      // 7. Refresh permissions
+      // 7. Refresh permissions and users
+      await syncUsersWithCloud();
       const freshPerms = await fetchPermissionsFromSupabase();
       if (freshPerms) {
         saveClientPermissions(freshPerms);
         setClientPermissions(freshPerms);
       }
 
-      alert('Sincronizzazione Cloud completata con successo! Tutte le foto, documenti e modifiche sono stati sincronizzati e protetti.');
+      alert('Sincronizzazione Cloud completata con successo! Tutte le modifiche sono sincronizzate in tempo reale.');
     } catch (err) {
       console.error('Manual refresh error:', err);
       alert('Avviso di sincronizzazione: ' + (err.message || 'Verifica la connessione internet.'));

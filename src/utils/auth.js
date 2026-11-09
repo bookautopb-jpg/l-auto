@@ -179,14 +179,26 @@ export async function syncUsersWithCloud() {
       const currentLocal = getUsers();
       const map = new Map();
 
-      // Guaranteed baseline
-      INITIAL_USERS.forEach(u => { if (u && u.id) map.set(u.id, u); });
-
-      // Add remote users from Supabase Cloud
+      // Add remote users from Supabase Cloud as authoritative dynamic truth
       remoteUsers.forEach(u => { if (u && u.id) map.set(u.id, u); });
 
-      // If local has any newly added user that hasn't pushed yet, keep it!
-      currentLocal.forEach(u => { if (u && u.id && !map.has(u.id)) map.set(u.id, u); });
+      // Safety check: ensure at least one super_admin exists so the owner is never locked out
+      const hasSuperAdmin = Array.from(map.values()).some(u => u.role === 'super_admin');
+      if (!hasSuperAdmin) {
+        const defaultAdmin = INITIAL_USERS.find(u => u.role === 'super_admin') || INITIAL_USERS[0];
+        if (defaultAdmin) map.set(defaultAdmin.id, defaultAdmin);
+      }
+
+      // If local storage has any newly added user created in the last 10 minutes that hasn't pushed yet, keep it
+      const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+      currentLocal.forEach(u => {
+        if (u && u.id && !map.has(u.id)) {
+          const createdAtTime = u.createdAt ? new Date(u.createdAt).getTime() : 0;
+          if (createdAtTime > tenMinutesAgo) {
+            map.set(u.id, u);
+          }
+        }
+      });
 
       const merged = Array.from(map.values());
       memoryUsersCache = merged;

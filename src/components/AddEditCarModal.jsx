@@ -391,8 +391,8 @@ export default function AddEditCarModal({
       images: formData.images,
       carPhotos: formData.images,
       logoImg: assignedLogo,
-      mainPhoto: formData.images.length > 0 ? formData.images[0] : (carToEdit?.mainPhoto || carToEdit?.pageImage || ''),
-      pageImage: formData.images.length > 0 ? formData.images[0] : (carToEdit?.pageImage || ''),
+      mainPhoto: formData.images.length > 0 ? formData.images[0] : '',
+      pageImage: formData.images.length > 0 ? formData.images[0] : '',
       isFavorite: carToEdit ? carToEdit.isFavorite : false,
 
       // Extended Fields (Documenti, Manutenzione, Costi, Viaggi)
