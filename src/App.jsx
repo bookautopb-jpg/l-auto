@@ -21,7 +21,15 @@ import { getCurrentUser, setCurrentUser as setCurrentUserInStorage, logoutUser, 
 import { syncLocationsWithCloud } from './utils/locations';
 import { getOwners, syncOwnersWithCloud } from './utils/owners';
 import { checkAndTriggerAutomaticEmailAlerts, syncEmailConfigWithCloud } from './utils/emailAlerts';
-import { fetchCarsFromSupabase, syncCarsToSupabase, upsertSingleCarToSupabase, fetchPermissionsFromSupabase, syncPermissionsToSupabase } from './utils/supabase';
+import { 
+  fetchCarsFromSupabase, 
+  syncCarsToSupabase, 
+  upsertSingleCarToSupabase, 
+  fetchPermissionsFromSupabase, 
+  syncPermissionsToSupabase,
+  subscribeToCarsRealtime,
+  broadcastCarChange
+} from './utils/supabase';
 import { saveCarsToLocal, getCarsFromLocal } from './utils/storage';
 import { getClientPermissions, saveClientPermissions, isStaffUser, canViewExpirations } from './utils/permissions';
 import { markCarAsPermanentlyDeleted, markCarsAsPermanentlyDeleted, filterOutDeletedCars, syncDeletedCarsWithCloud } from './utils/deletedCars';
@@ -37,6 +45,20 @@ export default function App() {
   // Auth & User State
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const [clientPermissions, setClientPermissions] = useState(() => getClientPermissions());
+
+  // Real-time synchronization toast feedback
+  const [realtimeToast, setRealtimeToast] = useState(null);
+  const realtimeToastTimeoutRef = useRef(null);
+
+  const showRealtimeToast = (msg) => {
+    if (realtimeToastTimeoutRef.current) {
+      clearTimeout(realtimeToastTimeoutRef.current);
+    }
+    setRealtimeToast(msg);
+    realtimeToastTimeoutRef.current = setTimeout(() => {
+      setRealtimeToast(null);
+    }, 3500);
+  };
 
   const handleLoginSuccess = (user, rememberMe = false) => {
     hasShownEmailAlertRef.current = false;
@@ -254,8 +276,7 @@ export default function App() {
         window.location.hostname === '0.0.0.0'
       );
 
-      // In local mode, public/data/cars.json & local storage are the absolute authority.
-      // We NEVER allow remote Supabase to overwrite local test edits or reset data!
+      // In local mode, immediately display local baseline so app opens instantly with zero latency
       if (isLocalhost) {
         let mergedLocal = baselineCars;
         if (localCars && localCars.length > 0) {
@@ -264,14 +285,7 @@ export default function App() {
         if (mergedLocal && mergedLocal.length > 0) {
           setCars(mergedLocal);
           saveCarsToLocal(mergedLocal);
-          // Persist directly to public/data/cars.json on disk
-          fetch('/api/sync-cars-json', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cars: mergedLocal })
-          }).catch(() => {});
           setLoading(false);
-          return;
         }
       }
 
@@ -386,24 +400,109 @@ export default function App() {
     loadInitialCars();
   }, []);
 
-  // Periodic background check against Supabase (every 30s) so changes made on Mac appear on phone automatically
+  // Real-time synchronization via Supabase Realtime (WebSocket + Instant Broadcasts + Heartbeat)
   useEffect(() => {
-    // In local development / testing, DO NOT poll remote Supabase to prevent overwriting local test work!
-    if (typeof window !== 'undefined' && (
-      window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1' ||
-      window.location.hostname === '0.0.0.0'
-    )) {
-      return;
-    }
+    // 1. Subscribe to Live Realtime Channel (Instant updates in milliseconds!)
+    const unsubscribe = subscribeToCarsRealtime((event) => {
+      const { type, eventType, car, carId } = event;
+      
+      // Handle system permissions or config update
+      if (type === 'SYSTEM' && event.id === '__app_permissions__') {
+        fetchPermissionsFromSupabase().then(p => {
+          if (p) {
+            setClientPermissions(p);
+            saveClientPermissions(p);
+          }
+        }).catch(() => {});
+        return;
+      }
 
+      // Handle car deletion in real-time
+      if (eventType === 'DELETE') {
+        const targetId = carId || car?.id;
+        if (!targetId) return;
+        setCars(prev => {
+          const updated = prev.filter(c => String(c.id) !== String(targetId));
+          saveCarsToLocal(updated);
+          return updated;
+        });
+        setSelectedCar(prev => (prev && String(prev.id) === String(targetId) ? null : prev));
+        showRealtimeToast('Una vettura è stata eliminata in tempo reale');
+        return;
+      }
+
+      // Handle car insert or update in real-time
+      if (car && (eventType === 'INSERT' || eventType === 'UPDATE' || type === 'BROADCAST')) {
+        setCars(prev => {
+          const idx = prev.findIndex(c => String(c.id) === String(car.id));
+          let updated;
+          if (idx >= 0) {
+            updated = [...prev];
+            const current = prev[idx];
+            const currentDocs = Array.isArray(current.documents) ? current.documents : [];
+            const carDocs = Array.isArray(car.documents) ? car.documents : [];
+            const mergedDocs = carDocs.length > 0 ? carDocs : currentDocs;
+
+            updated[idx] = {
+              ...current,
+              ...car,
+              documents: mergedDocs
+            };
+          } else {
+            updated = [car, ...prev];
+          }
+          saveCarsToLocal(updated);
+          return updated;
+        });
+
+        setSelectedCar(prev => {
+          if (prev && String(prev.id) === String(car.id)) {
+            return { ...prev, ...car };
+          }
+          return prev;
+        });
+
+        const carName = `${car.brand || ''} ${car.model || ''}`.trim() || 'Vettura';
+        showRealtimeToast(`⚡ Dati sincronizzati in tempo reale: ${carName}`);
+      }
+    });
+
+    // 2. Instant sync when browser tab gains focus or user unlocks screen
+    const handleVisibilitySync = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCarsFromSupabase(4000).then(remoteCars => {
+          if (remoteCars && remoteCars.length > 0) {
+            const activeCars = filterOutDeletedCars(remoteCars);
+            const formatted = formatCarImages(activeCars);
+            setCars(prev => {
+              if (JSON.stringify(prev) !== JSON.stringify(formatted)) {
+                saveCarsToLocal(formatted);
+                return formatted;
+              }
+              return prev;
+            });
+          }
+        }).catch(() => {});
+
+        fetchPermissionsFromSupabase(3000).then(freshPerms => {
+          if (freshPerms) {
+            setClientPermissions(freshPerms);
+            saveClientPermissions(freshPerms);
+          }
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilitySync);
+    document.addEventListener('visibilitychange', handleVisibilitySync);
+
+    // 3. Resilient background heartbeat (every 8s) to keep state in perfect sync across all devices
     const interval = setInterval(async () => {
-      const freshSupabase = await fetchCarsFromSupabase();
+      const freshSupabase = await fetchCarsFromSupabase(5000);
       if (freshSupabase && freshSupabase.length > 0) {
         const activeSupabase = filterOutDeletedCars(freshSupabase);
         const formatted = formatCarImages(activeSupabase);
         setCars(prev => {
-          // Merge prev documents and images into freshSupabase so remote poll never clears newly attached docs or photos
           const mergedWithDocs = formatted.map(sc => {
             const prevCar = (prev || []).find(p => String(p.id) === String(sc.id));
             if (!prevCar) return sc;
@@ -434,7 +533,6 @@ export default function App() {
             };
           });
 
-          // Compare JSON string to prevent unnecessary re-renders
           if (JSON.stringify(prev) !== JSON.stringify(mergedWithDocs)) {
             saveCarsToLocal(mergedWithDocs);
             return mergedWithDocs;
@@ -443,8 +541,7 @@ export default function App() {
         });
       }
 
-      // Also check if permissions have been changed remotely by Admin
-      fetchPermissionsFromSupabase().then(freshPerms => {
+      fetchPermissionsFromSupabase(4000).then(freshPerms => {
         if (freshPerms) {
           setClientPermissions(prev => {
             if (JSON.stringify(prev) !== JSON.stringify(freshPerms)) {
@@ -455,8 +552,14 @@ export default function App() {
           });
         }
       }).catch(() => {});
-    }, 30000);
-    return () => clearInterval(interval);
+    }, 8000);
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      window.removeEventListener('focus', handleVisibilitySync);
+      document.removeEventListener('visibilitychange', handleVisibilitySync);
+      clearInterval(interval);
+    };
   }, []);
 
   // Manual Cloud Data Refresh Handler with Smart 2-Way Merge (Zero Data Loss)
@@ -679,6 +782,7 @@ export default function App() {
     
     saveCarsState(updated);
     upsertSingleCarToSupabase(finalCar);
+    broadcastCarChange(carToEdit ? 'UPDATE' : 'INSERT', finalCar);
     
     // Clear filters so user immediately sees the newly added car
     setSelectedBrand('Tutti');
@@ -707,6 +811,7 @@ export default function App() {
 
     saveCarsState(updatedCars);
     upsertSingleCarToSupabase(updatedCar);
+    broadcastCarChange('UPDATE', updatedCar);
 
     if (typeof window !== 'undefined' && (
       window.location.hostname === 'localhost' ||
@@ -732,6 +837,7 @@ export default function App() {
 
     // 1. Mark permanently deleted (local storage tombstone + delete from Supabase row + sync tombstone)
     await markCarAsPermanentlyDeleted(carId);
+    broadcastCarChange('DELETE', null, carId);
 
     // If in localhost, delete from public/data/cars.json on disk too AND delete entire folder (docs + immagini)!
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
@@ -773,6 +879,7 @@ export default function App() {
     const updatedCar = updated.find(c => String(c.id) === String(carId));
     if (updatedCar) {
       upsertSingleCarToSupabase(updatedCar);
+      broadcastCarChange('UPDATE', updatedCar);
     }
     if (selectedCar && String(selectedCar.id) === String(carId)) {
       setSelectedCar(prev => ({
@@ -811,10 +918,6 @@ export default function App() {
       logoImg: getLogoForBrand(car.brand) || (isValidBrandLogo(car.logoImg) ? car.logoImg : '')
     }));
     saveCarsState(updated);
-    const updatedCar = updated.find(c => String(c.id) === String(carId));
-    if (updatedCar) {
-      upsertSingleCarToSupabase(updatedCar);
-    }
     if (selectedCar) {
       setSelectedCar(prev => prev ? ({
         ...prev,
@@ -1026,6 +1129,17 @@ export default function App() {
               ? 'bg-gradient-to-l from-amber-700/25 via-yellow-900/15 to-transparent'
               : 'bg-gradient-to-l from-blue-600/25 via-indigo-600/15 to-transparent'
           }`} style={{ animationDelay: '2s' }} />
+        </div>
+      )}
+
+      {/* Live Real-Time Cloud Sync Toast */}
+      {realtimeToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center space-x-2.5 px-4 py-2 bg-slate-900/95 border border-emerald-500/50 text-emerald-300 rounded-full shadow-2xl backdrop-blur-md text-xs font-semibold animate-fade-in pointer-events-none transition-all">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>{realtimeToast}</span>
         </div>
       )}
 

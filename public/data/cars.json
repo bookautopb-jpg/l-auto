@@ -14,13 +14,11 @@
     "notes": "prova",
     "images": [
       "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_1.png",
-      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_2.png",
-      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_3.jpeg"
+      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_2.png"
     ],
     "carPhotos": [
       "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_1.png",
-      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_2.png",
-      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_3.jpeg"
+      "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_2.png"
     ],
     "logoImg": "./images/logos/fiat.jpeg",
     "mainPhoto": "./DOCUMENTI SCANSIONATI/FIAT 500s/immagini/foto_1.png",
@@ -224,7 +222,7 @@
       "./images/cars/car_6_img_4.jpeg",
       "./images/cars/car_6_img_1.jpeg"
     ],
-    "pageImage": "./images/cars/car_6_page.jpg",
+    "pageImage": "./images/cars/car_6_img_2.jpeg",
     "isFavorite": false,
     "notes": "",
     "mainPhoto": "./images/cars/car_6_img_2.jpeg",
@@ -232,8 +230,9 @@
     "carPhotos": [
       "./images/cars/car_6_img_2.jpeg",
       "./images/cars/car_6_img_3.jpeg",
+      "./images/cars/car_6_img_5.jpeg",
       "./images/cars/car_6_img_4.jpeg",
-      "./images/cars/car_6_img_5.jpeg"
+      "./images/cars/car_6_img_1.jpeg"
     ],
     "scadenzaBollo": "",
     "scadenzaAssicurazione": "",
@@ -595,14 +594,15 @@
       "./images/cars/car_17_img_3.jpeg",
       "./images/cars/car_17_img_1.jpeg"
     ],
-    "pageImage": "./images/cars/car_17_page.jpg",
+    "pageImage": "./images/cars/car_17_img_2.jpeg",
     "isFavorite": false,
     "notes": "",
     "mainPhoto": "./images/cars/car_17_img_2.jpeg",
     "logoImg": "./images/logos/ferrari.jpeg",
     "carPhotos": [
       "./images/cars/car_17_img_2.jpeg",
-      "./images/cars/car_17_img_3.jpeg"
+      "./images/cars/car_17_img_3.jpeg",
+      "./images/cars/car_17_img_1.jpeg"
     ],
     "scadenzaBollo": "",
     "scadenzaAssicurazione": "",

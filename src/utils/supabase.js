@@ -1,12 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta?.env?.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta?.env?.VITE_SUPABASE_ANON_KEY || '';
+const DEFAULT_SUPABASE_URL = 'https://sijweksapiulhmtyqiwp.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpandla3NhcGl1bGhtdHlxaXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MzE3NTUsImV4cCI6MjEwNjIwNzc1NX0.ulNACRzsHu_mBrfd1q01d-W5dS5FBHI7f4uDFJu-eww';
+
+const supabaseUrl = import.meta?.env?.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = import.meta?.env?.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
+      }
+    })
   : null;
 
 // Map DB row to Car object format preserving 100% of car fields, photos, and document details
@@ -582,4 +591,109 @@ export async function syncBackgroundsToSupabase(backgrounds) {
     return false;
   }
 }
+
+let activeRealtimeChannel = null;
+
+// Subscribe to real-time events (Postgres DB changes and Instant Broadcasts)
+export function subscribeToCarsRealtime(onCarEvent) {
+  if (!supabase) return () => {};
+
+  if (activeRealtimeChannel) {
+    try {
+      supabase.removeChannel(activeRealtimeChannel);
+    } catch (e) {}
+  }
+
+  const channel = supabase.channel('cars-realtime-room', {
+    config: {
+      broadcast: { ack: true }
+    }
+  });
+
+  channel
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'cars' },
+      (payload) => {
+        if (!payload) return;
+        const eventType = payload.eventType; // 'INSERT', 'UPDATE', 'DELETE'
+        const newRow = payload.new;
+        const oldRow = payload.old;
+        
+        // Skip system records like __app_permissions__ or __deleted_cars__
+        const rowId = newRow?.id || oldRow?.id;
+        if (rowId && String(rowId).startsWith('__')) {
+          onCarEvent({ type: 'SYSTEM', eventType, id: rowId, newRow });
+          return;
+        }
+
+        const car = newRow ? mapRowToCar(newRow) : null;
+        onCarEvent({
+          type: 'POSTGRES',
+          eventType,
+          car,
+          carId: rowId,
+          timestamp: Date.now()
+        });
+      }
+    )
+    .on(
+      'broadcast',
+      { event: 'car_event' },
+      (response) => {
+        if (!response || !response.payload) return;
+        const { eventType, car, carId, senderId } = response.payload;
+        // Ignore self-broadcasts
+        const mySession = typeof window !== 'undefined' ? window.__client_session_id : null;
+        if (mySession && senderId === mySession) return;
+
+        onCarEvent({
+          type: 'BROADCAST',
+          eventType,
+          car,
+          carId,
+          timestamp: Date.now()
+        });
+      }
+    )
+    .subscribe((status) => {
+      console.log('📡 Realtime Supabase Channel status:', status);
+    });
+
+  activeRealtimeChannel = channel;
+
+  return () => {
+    if (activeRealtimeChannel) {
+      supabase.removeChannel(activeRealtimeChannel);
+      activeRealtimeChannel = null;
+    }
+  };
+}
+
+// Broadcast an immediate real-time change to all other devices (< 100ms)
+export async function broadcastCarChange(eventType, carData, carId = null) {
+  if (!supabase) return;
+  try {
+    const channel = activeRealtimeChannel || supabase.channel('cars-realtime-room');
+    if (typeof window !== 'undefined' && !window.__client_session_id) {
+      window.__client_session_id = Math.random().toString(36).substring(2, 9);
+    }
+    const senderId = typeof window !== 'undefined' ? window.__client_session_id : 'node';
+
+    await channel.send({
+      type: 'broadcast',
+      event: 'car_event',
+      payload: {
+        eventType, // 'INSERT', 'UPDATE', 'DELETE'
+        car: carData,
+        carId: carId || carData?.id,
+        senderId,
+        timestamp: Date.now()
+      }
+    });
+  } catch (err) {
+    console.warn('Realtime broadcast error:', err);
+  }
+}
+
 
