@@ -88,7 +88,7 @@ export const INITIAL_USERS = [
     "username": "pb",
     "password": "1946a",
     "name": "PB",
-    "role": "viewer",
+    "role": "admin",
     "email": "",
     "createdAt": "2026-11-09T13:47:40.362Z"
   }

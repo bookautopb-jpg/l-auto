@@ -173,7 +173,8 @@ export default function PdfPrintReportModal({
   const [scaleFactor, setScaleFactor] = useState(1);
   const [isFullSize, setIsFullSize] = useState(false);
   const [forceFullScale, setForceFullScale] = useState(false);
-  const [showMobileOptions, setShowMobileOptions] = useState(false);
+  // Options container visible by default across all devices & screen sizes
+  const [showMobileOptions, setShowMobileOptions] = useState(true);
   const reportContainerRef = useRef(null);
 
   const currentFont = PDF_FONT_OPTIONS.find(f => f.id === selectedFontId) || PDF_FONT_OPTIONS[0];
