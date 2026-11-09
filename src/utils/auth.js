@@ -3,7 +3,8 @@ import {
   fetchUsersFromSupabase,
   syncUsersToSupabase,
   fetchBackgroundsFromSupabase,
-  syncBackgroundsToSupabase
+  syncBackgroundsToSupabase,
+  broadcastUserChange
 } from './supabase.js';
 import { saveUsersToIndexedDB, getUsersFromIndexedDB } from './storage.js';
 
@@ -80,6 +81,15 @@ export const INITIAL_USERS = [
     "role": "admin",
     "email": "cantinaportaromana93@gmail.com",
     "createdAt": "2026-11-07T11:33:34.757Z"
+  },
+  {
+    "id": "user_1794232060362",
+    "username": "pb",
+    "password": "1946a",
+    "name": "PB",
+    "role": "viewer",
+    "email": "",
+    "createdAt": "2026-11-09T13:47:40.362Z"
   }
 ];
 
@@ -133,81 +143,85 @@ export function saveUsers(users) {
     console.warn('IndexedDB save users error:', err);
   });
 
-  // 3. Centralized DreamHost Server API Sync (Multi-Device)
+  // 3. Centralized Server API Sync (Multi-Device)
   try {
     const apiUrl = getUsersApiUrl();
     fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(users)
-    }).catch(err => {
-      console.warn('DreamHost server users sync error:', err);
-    });
-  } catch (e) {
-    console.warn('DreamHost API sync exception:', e);
-  }
+    }).catch(() => {});
+  } catch (e) {}
 
-  // 4. Synchronize to Supabase Cloud if enabled
-  syncUsersToSupabase(users).catch(err => {
+  // 4. Synchronize immediately to Supabase Cloud and broadcast to all devices in real-time
+  syncUsersToSupabase(users).then(() => {
+    broadcastUserChange(users);
+  }).catch(err => {
     console.warn('Background syncUsersToSupabase error:', err);
   });
+
+  // 5. If in local development, also update public/data/users.json on disk
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    fetch('/api/sync-users-json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ users })
+    }).catch(() => {});
+  }
 }
 
-// Sync users between Central Server, static users.json, Supabase Cloud and local storage
+// Sync users between Supabase Cloud (Central truth), IndexedDB, and local storage (Zero data loss)
 export async function syncUsersWithCloud() {
-  // 1. Try Central Users API or local users.json
+  // 1. SUPABASE CLOUD FIRST (The central, live source of truth for all users across all devices!)
   try {
-    const apiUrl = getUsersApiUrl();
-    const res = await fetch(`${apiUrl}?t=${Date.now()}`, {
-      cache: 'no-store'
-    });
-    if (res.ok) {
-      const serverUsers = await res.json();
-      if (Array.isArray(serverUsers) && serverUsers.length > 0) {
-        memoryUsersCache = serverUsers;
-        try {
-          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(serverUsers));
-        } catch (e) {}
-        saveUsersToIndexedDB(serverUsers).catch(() => {});
-        return serverUsers;
-      }
-    }
-  } catch (serverErr) {
-    // API not responding (e.g. static host like GitHub Pages), try data/users.json directly
-  }
-
-  // 1b. Try static public/data/users.json (ideal for GitHub Pages & Localhost)
-  try {
-    const res = await fetch(`./data/users.json?t=${Date.now()}`, { cache: 'no-store' });
-    if (res.ok) {
-      const staticUsers = await res.json();
-      if (Array.isArray(staticUsers) && staticUsers.length > 0) {
-        memoryUsersCache = staticUsers;
-        try {
-          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(staticUsers));
-        } catch (e) {}
-        saveUsersToIndexedDB(staticUsers).catch(() => {});
-        return staticUsers;
-      }
-    }
-  } catch (staticErr) {}
-
-  // 2. Supabase Cloud if configured
-  try {
-    const remoteUsers = await fetchUsersFromSupabase();
+    const remoteUsers = await fetchUsersFromSupabase(5000);
     if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-      memoryUsersCache = remoteUsers;
+      const currentLocal = getUsers();
+      const map = new Map();
+
+      // Guaranteed baseline
+      INITIAL_USERS.forEach(u => { if (u && u.id) map.set(u.id, u); });
+
+      // Add remote users from Supabase Cloud
+      remoteUsers.forEach(u => { if (u && u.id) map.set(u.id, u); });
+
+      // If local has any newly added user that hasn't pushed yet, keep it!
+      currentLocal.forEach(u => { if (u && u.id && !map.has(u.id)) map.set(u.id, u); });
+
+      const merged = Array.from(map.values());
+      memoryUsersCache = merged;
       try {
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(remoteUsers));
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(merged));
       } catch (e) {}
-      saveUsersToIndexedDB(remoteUsers).catch(() => {});
-      return remoteUsers;
+      saveUsersToIndexedDB(merged).catch(() => {});
+
+      // Keep Supabase updated with any newly merged user
+      if (merged.length > remoteUsers.length) {
+        syncUsersToSupabase(merged).catch(() => {});
+      }
+
+      // If on localhost, write to disk
+      if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        fetch('/api/sync-users-json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ users: merged })
+        }).catch(() => {});
+      }
+
+      return merged;
+    } else {
+      // If Supabase has no record yet, push current local users to Supabase
+      const current = getUsers();
+      if (Array.isArray(current) && current.length > 0) {
+        syncUsersToSupabase(current).catch(() => {});
+      }
     }
   } catch (e) {
-    console.warn('Failed syncing users with cloud:', e);
+    console.warn('Failed syncing users with Supabase cloud:', e);
   }
 
-  // 3. Fallback to IndexedDB
+  // 2. Fallback to IndexedDB
   try {
     const idbUsers = await getUsersFromIndexedDB();
     if (Array.isArray(idbUsers) && idbUsers.length > 0) {
@@ -215,6 +229,21 @@ export async function syncUsersWithCloud() {
       return idbUsers;
     }
   } catch (e) {}
+
+  // 3. Fallback to static users.json ONLY if offline and local storage is completely empty
+  try {
+    const res = await fetch(`./data/users.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const staticUsers = await res.json();
+      if (Array.isArray(staticUsers) && staticUsers.length > 0) {
+        const current = getUsers();
+        if (!current || current.length === 0) {
+          memoryUsersCache = staticUsers;
+          return staticUsers;
+        }
+      }
+    }
+  } catch (staticErr) {}
 
   return getUsers();
 }

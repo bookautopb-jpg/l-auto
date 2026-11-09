@@ -422,6 +422,34 @@ function localDocumentStoragePlugin() {
         }
       });
 
+      // 7b. Sync full users list directly to public/data/users.json
+      server.middlewares.use('/api/sync-users-json', (req, res) => {
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { users } = JSON.parse(body);
+              if (Array.isArray(users)) {
+                const usersPath = path.resolve('./public/data/users.json');
+                fs.writeFileSync(usersPath, JSON.stringify(users, null, 2), 'utf8');
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, count: users.length }));
+                return;
+              }
+            } catch (err) {
+              console.error('Error syncing users.json:', err);
+            }
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: 'Invalid users payload' }));
+          });
+        } else {
+          res.statusCode = 404;
+          res.end();
+        }
+      });
+
       // 8. Save custom brand logo to public/images/logos/<brand>.png and update cars.json
       server.middlewares.use('/api/save-brand-logo', (req, res) => {
         if (req.method === 'POST') {

@@ -417,6 +417,14 @@ export default function App() {
         return;
       }
 
+      // Handle system users update in real-time across all devices
+      if ((type === 'SYSTEM' && event.id === '__app_users__') || type === 'USER_BROADCAST') {
+        syncUsersWithCloud().then(() => {
+          showRealtimeToast('👥 Utenti sincronizzati in tempo reale');
+        }).catch(() => {});
+        return;
+      }
+
       // Handle car deletion in real-time
       if (eventType === 'DELETE') {
         const targetId = carId || car?.id;

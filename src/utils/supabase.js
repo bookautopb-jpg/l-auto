@@ -656,6 +656,22 @@ export function subscribeToCarsRealtime(onCarEvent) {
         });
       }
     )
+    .on(
+      'broadcast',
+      { event: 'user_event' },
+      (response) => {
+        if (!response || !response.payload) return;
+        const { users, senderId } = response.payload;
+        const mySession = typeof window !== 'undefined' ? window.__client_session_id : null;
+        if (mySession && senderId === mySession) return;
+
+        onCarEvent({
+          type: 'USER_BROADCAST',
+          users,
+          timestamp: Date.now()
+        });
+      }
+    )
     .subscribe((status) => {
       console.log('📡 Realtime Supabase Channel status:', status);
     });
@@ -693,6 +709,30 @@ export async function broadcastCarChange(eventType, carData, carId = null) {
     });
   } catch (err) {
     console.warn('Realtime broadcast error:', err);
+  }
+}
+
+// Broadcast an immediate real-time users update to all other devices (< 100ms)
+export async function broadcastUserChange(users) {
+  if (!supabase) return;
+  try {
+    const channel = activeRealtimeChannel || supabase.channel('cars-realtime-room');
+    if (typeof window !== 'undefined' && !window.__client_session_id) {
+      window.__client_session_id = Math.random().toString(36).substring(2, 9);
+    }
+    const senderId = typeof window !== 'undefined' ? window.__client_session_id : 'node';
+
+    await channel.send({
+      type: 'broadcast',
+      event: 'user_event',
+      payload: {
+        users,
+        senderId,
+        timestamp: Date.now()
+      }
+    });
+  } catch (err) {
+    console.warn('Realtime broadcast users error:', err);
   }
 }
 
