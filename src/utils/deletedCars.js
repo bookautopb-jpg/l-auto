@@ -10,8 +10,8 @@ import {
 
 export const DELETED_CARS_STORAGE_KEY = 'book_auto_pb_deleted_cars_v1';
 
-// Known deleted vehicle IDs that must never reappear (including FIAT Tipo 61)
-const INITIAL_PERMANENTLY_DELETED = ['car_new_1791701751933'];
+// Known deleted vehicle IDs that must never reappear (including FIAT Tipo 61 and FIAT 500s)
+const INITIAL_PERMANENTLY_DELETED = ['car_new_1791701751933', 'car_new_1792185373678'];
 
 /**
  * Get all permanently deleted car IDs from localStorage
