@@ -298,7 +298,7 @@ export default function PdfPrintReportModal({
       }
 
       // 2. Immediately append selected attached documents for THIS car
-      if (isStaff && includeDocuments) {
+      if (includeDocuments) {
         const docsToAppend = (car.documents || []).filter(isDocSelected);
         for (const doc of docsToAppend) {
           const source = getDocumentSource(doc);
@@ -662,7 +662,7 @@ export default function PdfPrintReportModal({
               </div>
 
               {/* Include Photos Toggle Button */}
-              <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs shrink-0">
                 <button
                   type="button"
                   onClick={() => setIncludePhotos(true)}
@@ -690,76 +690,73 @@ export default function PdfPrintReportModal({
                 </button>
               </div>
 
-              {/* Include Extended Maintenance Report & Documents Toggles (Strictly Staff Only) */}
-              {isStaff && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setIncludeExtendedReport(!includeExtendedReport)}
-                    className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                      includeExtendedReport 
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
-                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                    }`}
-                    title="Includi scheda tecnica A4 con Registro Manutenzione, Scadenze e Costi"
-                  >
-                    <Wrench className="w-3.5 h-3.5" />
-                    <span>+ Scheda Manutenzione</span>
-                  </button>
+              {/* Toggle Stampa Proprietario (Disponibile su tutti i dispositivi) */}
+              <button
+                type="button"
+                onClick={handleToggleOwner}
+                className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 ${
+                  includeOwner 
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+                title={includeOwner ? "Proprietario visibile sul foglio. Clicca per nasconderlo e stampare senza nome." : "Proprietario nascosto dal foglio di stampa. Clicca per mostrarlo."}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>{includeOwner ? '✓ Con Proprietario' : 'Senza Proprietario'}</span>
+              </button>
 
-                  {/* Toggle Stampa Proprietario */}
-                  <button
-                    type="button"
-                    onClick={handleToggleOwner}
-                    className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                      includeOwner 
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
-                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                    }`}
-                    title={includeOwner ? "Proprietario visibile sul foglio. Clicca per nasconderlo e stampare senza nome." : "Proprietario nascosto dal foglio di stampa. Clicca per mostrarlo."}
-                  >
-                    <User className="w-3.5 h-3.5" />
-                    <span>{includeOwner ? '✓ Con Proprietario' : 'Senza Proprietario'}</span>
-                  </button>
+              {/* Toggle Stampa Note (Disponibile su tutti i dispositivi) */}
+              <button
+                type="button"
+                onClick={handleToggleNotes}
+                className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 ${
+                  includeNotes 
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+                title={includeNotes ? "Note visibili sul foglio. Clicca per nasconderle e stampare senza note." : "Note nascoste dal foglio di stampa. Clicca per mostrarle."}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>{includeNotes ? '✓ Con Note' : 'Senza Note'}</span>
+              </button>
 
-                  {/* Toggle Stampa Note */}
-                  <button
-                    type="button"
-                    onClick={handleToggleNotes}
-                    className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                      includeNotes 
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
-                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                    }`}
-                    title={includeNotes ? "Note visibili sul foglio. Clicca per nasconderle e stampare senza note." : "Note nascoste dal foglio di stampa. Clicca per mostrarle."}
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>{includeNotes ? '✓ Con Note' : 'Senza Note'}</span>
-                  </button>
+              {/* Include Extended Maintenance Report */}
+              <button
+                type="button"
+                onClick={() => setIncludeExtendedReport(!includeExtendedReport)}
+                className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 ${
+                  includeExtendedReport 
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+                title="Includi scheda tecnica A4 con Registro Manutenzione, Scadenze e Costi"
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                <span>+ Scheda Manutenzione</span>
+              </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (includeDocuments && selectedDocsCount > 0) {
-                        deselectAllCategories();
-                      } else {
-                        selectAllCategories();
-                      }
-                    }}
-                    className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                      includeDocuments && selectedDocsCount > 0 
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
-                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                    }`}
-                    title="Includi scansioni del Libretto, Assicurazione e Bollo nel report di stampa"
-                  >
-                    <Paperclip className="w-3.5 h-3.5" />
-                    <span>
-                      + Documenti Scansionati {allAttachedDocs.length > 0 ? `(${selectedDocsCount}/${allAttachedDocs.length})` : ''}
-                    </span>
-                  </button>
-                </>
-              )}
+              {/* Documenti Scansionati Allegati (Disponibile quando ci sono documenti) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (includeDocuments && selectedDocsCount > 0) {
+                    deselectAllCategories();
+                  } else {
+                    selectAllCategories();
+                  }
+                }}
+                className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 ${
+                  includeDocuments && selectedDocsCount > 0 
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold shadow-md' 
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+                title="Includi scansioni del Libretto, Assicurazione e Bollo nel report di stampa"
+              >
+                <Paperclip className="w-3.5 h-3.5" />
+                <span>
+                  + Documenti Scansionati {allAttachedDocs.length > 0 ? `(${selectedDocsCount}/${allAttachedDocs.length})` : ''}
+                </span>
+              </button>
 
               {/* Mobile Fit vs 100% Zoom Toggle */}
               {scaleFactor < 0.99 && (
@@ -902,7 +899,7 @@ export default function PdfPrintReportModal({
 
             // Calculate total pages for this car so page badges & footers are 100% accurate
             const mainPagesCount = photoPages.length;
-            const hasExtendedPage = isStaff && includeExtendedReport;
+            const hasExtendedPage = (isStaff || Boolean(currentUser)) && includeExtendedReport;
             const extendedPagesCount = hasExtendedPage ? 1 : 0;
             const activeDocs = (includeDocuments && Array.isArray(car.documents))
               ? car.documents.filter(isDocSelected)
@@ -1147,7 +1144,7 @@ export default function PdfPrintReportModal({
                 })}
 
                 {/* OPTIONAL EXTENDED MAINTENANCE & DOCUMENTATION PAGE (PAGE 2) - STAFF ONLY */}
-                {isStaff && includeExtendedReport && (() => {
+                {(isStaff || Boolean(currentUser)) && includeExtendedReport && (() => {
                   const extendedPageNum = mainPagesCount + 1;
                   const pageBadge = `📋 Pagina ${extendedPageNum} di ${totalCarPages} — Scheda Tecnica Completa, Scadenze & Manutenzione`;
 

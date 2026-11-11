@@ -14,6 +14,7 @@ import {
   Settings,
   Users,
   UserPlus,
+  User,
   Trash2,
   Edit3,
   ImageIcon,
@@ -50,7 +51,8 @@ import {
   setMasterRecoveryPin,
   INITIAL_USERS
 } from '../utils/auth';
-import { getLocations, addLocation, removeLocation } from '../utils/locations';
+import { getLocations, addLocation, removeLocation, renameLocation } from '../utils/locations';
+import { getOwners, saveOwners, addOwner, removeOwner, renameOwner, syncOwnersWithCloud } from '../utils/owners';
 import { 
   getAdminEmail,
   setAdminEmail,
@@ -519,10 +521,20 @@ export default function AdminModal({
   const [newBgUrl, setNewBgUrl] = useState('');
   const [bgMsg, setBgMsg] = useState('');
 
-  // Locations State
+  // Locations & Owners State
   const [locationsList, setLocationsList] = useState([]);
   const [newLocationName, setNewLocationName] = useState('');
   const [locationMsg, setLocationMsg] = useState('');
+  const [editingLocName, setEditingLocName] = useState(null);
+  const [editingLocValue, setEditingLocValue] = useState('');
+
+  // Owners State
+  const [ownersList, setOwnersList] = useState(() => getOwners(cars));
+  const [newOwnerName, setNewOwnerName] = useState('');
+  const [ownerMsg, setOwnerMsg] = useState('');
+  const [editingOwnerName, setEditingOwnerName] = useState(null);
+  const [editingOwnerValue, setEditingOwnerValue] = useState('');
+  const [activeLocationSubTab, setActiveLocationSubTab] = useState('owners');
 
   // Email Settings State
   const [adminEmail, setAdminEmailState] = useState(() => getAdminEmail());
@@ -593,13 +605,97 @@ export default function AdminModal({
     setUsersList(getUsers());
     setBackgroundsList(getBackgroundImages());
     setLocationsList(getLocations());
+    setOwnersList(getOwners(cars));
     setActiveBg(activeBackground || getActiveBackground());
     syncUsersWithCloud().then(cloudUsers => {
       if (Array.isArray(cloudUsers) && cloudUsers.length > 0) {
         setUsersList(cloudUsers);
       }
     });
-  }, [activeBackground]);
+    syncOwnersWithCloud().then(cloudOwners => {
+      if (Array.isArray(cloudOwners) && cloudOwners.length > 0) {
+        setOwnersList(cloudOwners);
+      }
+    });
+  }, [activeBackground, cars]);
+
+  // Owners Handlers
+  const handleAddOwnerSubmit = (e) => {
+    e.preventDefault();
+    setOwnerMsg('');
+    const clean = newOwnerName.trim();
+    if (!clean) return;
+
+    if (ownersList.some(o => o.toLowerCase() === clean.toLowerCase())) {
+      setOwnerMsg(`Attenzione: Il proprietario "${clean}" è già presente nella lista.`);
+      setTimeout(() => setOwnerMsg(''), 4000);
+      return;
+    }
+
+    const updated = addOwner(clean);
+    setOwnersList(updated);
+    setNewOwnerName('');
+    setOwnerMsg(`Nuovo proprietario "${clean}" aggiunto con successo!`);
+    setTimeout(() => setOwnerMsg(''), 4000);
+  };
+
+  const handleRenameOwnerSubmit = (oldName, newName) => {
+    const cleanNew = (newName || '').trim();
+    if (!cleanNew || cleanNew.toLowerCase() === oldName.trim().toLowerCase()) {
+      setEditingOwnerName(null);
+      setEditingOwnerValue('');
+      return;
+    }
+
+    const updated = renameOwner(oldName, cleanNew);
+    setOwnersList(updated);
+
+    // Cascade rename to all cars
+    if (onUpdateCars && Array.isArray(cars)) {
+      let hasChanges = false;
+      const updatedCars = cars.map(c => {
+        const o = (c.proprietario || c.owner || '').trim();
+        if (o.toLowerCase() === oldName.trim().toLowerCase()) {
+          hasChanges = true;
+          return { ...c, proprietario: cleanNew };
+        }
+        return c;
+      });
+      if (hasChanges) {
+        onUpdateCars(updatedCars);
+      }
+    }
+
+    setEditingOwnerName(null);
+    setEditingOwnerValue('');
+    setOwnerMsg(`Proprietario "${oldName}" rinominato in "${cleanNew}" su tutte le vetture!`);
+    setTimeout(() => setOwnerMsg(''), 4000);
+  };
+
+  const handleDeleteOwner = (ownerName) => {
+    const assignedCars = (cars || []).filter(c => ((c.proprietario || c.owner || '').trim().toLowerCase() === ownerName.trim().toLowerCase()));
+    const confirmMsg = assignedCars.length > 0 
+      ? `Eliminare il proprietario "${ownerName}"?\n\nAttenzione: ${assignedCars.length} ${assignedCars.length === 1 ? 'vettura è assegnata' : 'vetture sono assegnate'} a questo proprietario e verranno disassociate.`
+      : `Sei sicuro di voler eliminare il proprietario "${ownerName}"?`;
+    if (window.confirm(confirmMsg)) {
+      const updated = removeOwner(ownerName);
+      setOwnersList(updated);
+
+      if (assignedCars.length > 0 && onUpdateCars && Array.isArray(cars)) {
+        const updatedCars = cars.map(c => {
+          const o = (c.proprietario || c.owner || '').trim();
+          if (o.toLowerCase() === ownerName.trim().toLowerCase()) {
+            return { ...c, proprietario: '' };
+          }
+          return c;
+        });
+        onUpdateCars(updatedCars);
+      }
+
+      setOwnerMsg(`Proprietario "${ownerName}" rimosso con successo.`);
+      setTimeout(() => setOwnerMsg(''), 4000);
+    }
+  };
 
   // Add Location
   const handleAddLocationSubmit = (e) => {
@@ -614,11 +710,51 @@ export default function AdminModal({
     setTimeout(() => setLocationMsg(''), 3000);
   };
 
+  // Rename Location
+  const handleRenameLocationSubmit = (oldName, newName) => {
+    const cleanNew = (newName || '').trim();
+    if (!cleanNew || cleanNew.toLowerCase() === oldName.trim().toLowerCase()) {
+      setEditingLocName(null);
+      setEditingLocValue('');
+      return;
+    }
+
+    const updated = renameLocation(oldName, cleanNew);
+    setLocationsList(updated);
+
+    // Cascade to cars
+    if (onUpdateCars && Array.isArray(cars)) {
+      let hasChanges = false;
+      const updatedCars = cars.map(c => {
+        const loc = (c.location || c.ubicazione || '').trim();
+        if (loc.toLowerCase() === oldName.trim().toLowerCase()) {
+          hasChanges = true;
+          return { ...c, location: cleanNew };
+        }
+        return c;
+      });
+      if (hasChanges) {
+        onUpdateCars(updatedCars);
+      }
+    }
+
+    setEditingLocName(null);
+    setEditingLocValue('');
+    setLocationMsg(`Ubicazione "${oldName}" rinominata in "${cleanNew}"!`);
+    setTimeout(() => setLocationMsg(''), 4000);
+  };
+
   // Remove Location
   const handleDeleteLocation = (locName) => {
-    if (window.confirm(`Sei sicuro di voler rimuovere "${locName}" dalle opzioni delle ubicazioni?`)) {
+    const assignedCars = (cars || []).filter(c => ((c.location || c.ubicazione || '').trim().toLowerCase() === locName.trim().toLowerCase()));
+    const confirmMsg = assignedCars.length > 0
+      ? `Rimuovere "${locName}" dalle ubicazioni?\n\nCi sono ${assignedCars.length} ${assignedCars.length === 1 ? 'vettura assegnata' : 'vetture assegnate'} a questa posizione.`
+      : `Sei sicuro di voler rimuovere "${locName}" dalle opzioni delle ubicazioni?`;
+    if (window.confirm(confirmMsg)) {
       const updated = removeLocation(locName);
       setLocationsList(updated);
+      setLocationMsg(`Ubicazione "${locName}" rimossa.`);
+      setTimeout(() => setLocationMsg(''), 3000);
     }
   };
 
@@ -857,8 +993,8 @@ export default function AdminModal({
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <MapPin className="w-4 h-4 shrink-0" />
-            <span>Ubicazioni ({locationsList.length})</span>
+            <User className="w-4 h-4 shrink-0 text-amber-400" />
+            <span>Proprietari & Ubicazioni ({ownersList.length + locationsList.length})</span>
           </button>
 
           <button
@@ -2054,72 +2190,400 @@ export default function AdminModal({
             </div>
           )}
 
-          {/* TAB 4: GESTIONE UBICAZIONI / GARAGE */}
+          {/* TAB 4: GESTIONE PROPRIETARI & UBICAZIONI / GARAGE */}
           {activeTab === 'locations' && (
             <div className="space-y-6 animate-fade-in">
               
-              {/* Add New Location Form */}
-              <form onSubmit={handleAddLocationSubmit} className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">
-                  <MapPin className="w-4 h-4 text-amber-400" />
-                  <h4 className="font-bold text-slate-100">Aggiungi Nuova Ubicazione / Garage</h4>
-                </div>
+              {/* Sub-tab Navigation: Proprietari vs Ubicazioni */}
+              <div className="flex border-b border-slate-800 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveLocationSubTab('owners')}
+                  className={`pb-2.5 px-3.5 py-2 flex items-center space-x-2 font-bold text-xs border-b-2 transition-all rounded-t-xl ${
+                    activeLocationSubTab === 'owners'
+                      ? 'border-amber-400 text-amber-400 bg-amber-500/10 shadow-sm'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5 text-amber-400" />
+                  <span>👤 Proprietari Vetture ({ownersList.length})</span>
+                </button>
 
-                {locationMsg && (
-                  <div className="p-2.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-semibold">
-                    {locationMsg}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveLocationSubTab('locations')}
+                  className={`pb-2.5 px-3.5 py-2 flex items-center space-x-2 font-bold text-xs border-b-2 transition-all rounded-t-xl ${
+                    activeLocationSubTab === 'locations'
+                      ? 'border-amber-400 text-amber-400 bg-amber-500/10 shadow-sm'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                  <span>📍 Ubicazioni Garage ({locationsList.length})</span>
+                </button>
+              </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="text"
-                    value={newLocationName}
-                    onChange={(e) => setNewLocationName(e.target.value)}
-                    placeholder="Nome nuova posizione (es. Garage Milano, Casa al Mare, Deposito 2)..."
-                    className="w-full flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1 shrink-0"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Aggiungi Ubicazione</span>
-                  </button>
-                </div>
-              </form>
-
-              {/* Master Locations List */}
-              <div className="space-y-3">
-                <h4 className="font-bold text-amber-400 uppercase tracking-wider text-[11px] flex items-center justify-between">
-                  <span>Elenco Ubicazioni Predefinite ({locationsList.length})</span>
-                  <span className="text-slate-400 text-[10px] normal-case font-normal">Disponibili nel menu a tendina delle vetture</span>
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {locationsList.map((loc, idx) => (
-                    <div 
-                      key={idx}
-                      className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-2 hover:border-slate-700 transition-all text-xs"
-                    >
-                      <div className="flex items-center space-x-2 text-slate-200">
-                        <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span className="font-semibold">{loc}</span>
+              {/* SECTION 1: PROPRIETARI VETTURE */}
+              {activeLocationSubTab === 'owners' && (
+                <div className="space-y-5 animate-fade-in">
+                  
+                  {/* Info Header Box */}
+                  <div className="bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 p-4 rounded-2xl border border-amber-500/20">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
+                          <User className="w-4 h-4 text-amber-400" />
+                          <span>Gestione Proprietari & Intestatari</span>
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                          Aggiungi, modifica o elimina i proprietari delle vetture. Quando rinomini o elimini un proprietario, tutte le vetture collegate vengono aggiornate e sincronizzate in tempo reale sul cloud.
+                        </p>
                       </div>
+                      <span className="shrink-0 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        <span>{ownersList.length} Totali</span>
+                      </span>
+                    </div>
 
+                    {ownerMsg && (
+                      <div className="mt-3 p-2.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-semibold animate-fade-in flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{ownerMsg}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add New Owner Form */}
+                  <form onSubmit={handleAddOwnerSubmit} className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 space-y-3 shadow-inner">
+                    <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">
+                      <Plus className="w-4 h-4 text-amber-400" />
+                      <h4 className="font-bold text-slate-100 text-xs uppercase tracking-wider">Aggiungi Nuovo Proprietario</h4>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={newOwnerName}
+                        onChange={(e) => setNewOwnerName(e.target.value)}
+                        placeholder="Nome proprietario o intestatario (es. Luciano, Shirantha, Collezione PB)..."
+                        className="w-full flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        required
+                      />
                       <button
-                        type="button"
-                        onClick={() => handleDeleteLocation(loc)}
-                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg border border-slate-800 transition-all"
-                        title="Elimina Ubicazione"
+                        type="submit"
+                        className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 shrink-0 shadow-lg shadow-amber-500/10"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Plus className="w-4 h-4" />
+                        <span>Aggiungi Proprietario</span>
                       </button>
                     </div>
-                  ))}
+                  </form>
+
+                  {/* Master Owners List */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-amber-400 uppercase tracking-wider text-[11px] flex items-center gap-2">
+                        <span>Elenco Proprietari Attivi ({ownersList.length})</span>
+                      </h4>
+                      <span className="text-slate-400 text-[10px]">Modifica con ✏️ o Rimuovi con 🗑️</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      {ownersList.map((owner, idx) => {
+                        const assignedCars = (cars || []).filter(c => ((c.proprietario || c.owner || '').trim().toLowerCase() === owner.trim().toLowerCase()));
+                        const isEditing = editingOwnerName === owner;
+
+                        return (
+                          <div 
+                            key={idx}
+                            className={`p-3 rounded-xl border transition-all text-xs flex flex-col justify-between gap-2.5 ${
+                              isEditing 
+                                ? 'bg-amber-950/20 border-amber-500/50 shadow-md ring-1 ring-amber-500/30' 
+                                : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            {isEditing ? (
+                              <div className="flex items-center gap-2 w-full">
+                                <input
+                                  type="text"
+                                  value={editingOwnerValue}
+                                  onChange={(e) => setEditingOwnerValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleRenameOwnerSubmit(owner, editingOwnerValue);
+                                    } else if (e.key === 'Escape') {
+                                      setEditingOwnerName(null);
+                                      setEditingOwnerValue('');
+                                    }
+                                  }}
+                                  autoFocus
+                                  className="flex-1 px-3 py-1.5 bg-slate-900 border border-amber-500/60 rounded-lg text-white text-xs font-semibold focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRenameOwnerSubmit(owner, editingOwnerValue)}
+                                  className="p-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold transition-all shadow-sm"
+                                  title="Salva Modifica (Enter)"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingOwnerName(null);
+                                    setEditingOwnerValue('');
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                                  title="Annulla (Esc)"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center space-x-2.5 min-w-0">
+                                  <div className="p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-amber-400 shrink-0">
+                                    <User className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-100 text-sm truncate">{owner}</span>
+                                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                                        assignedCars.length > 0 
+                                          ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' 
+                                          : 'bg-slate-900 text-slate-500 border-slate-800'
+                                      }`}>
+                                        {assignedCars.length} {assignedCars.length === 1 ? 'vettura' : 'vetture'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center space-x-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingOwnerName(owner);
+                                      setEditingOwnerValue(owner);
+                                    }}
+                                    className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg border border-slate-800/80 transition-all"
+                                    title={`Rinomina proprietario "${owner}"`}
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteOwner(owner)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg border border-slate-800/80 transition-all"
+                                    title={`Elimina proprietario "${owner}"`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Assigned Cars Badges */}
+                            {assignedCars.length > 0 && !isEditing && (
+                              <div className="pt-2 border-t border-slate-800/60 flex flex-wrap gap-1 items-center">
+                                <span className="text-[10px] text-slate-500 mr-1">Vetture:</span>
+                                {assignedCars.slice(0, 3).map((c, i) => (
+                                  <span key={i} className="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-slate-300 border border-slate-800 truncate max-w-[150px]">
+                                    {c.brand} {c.model}
+                                  </span>
+                                ))}
+                                {assignedCars.length > 3 && (
+                                  <span className="text-[10px] text-amber-400/80 font-bold px-1">
+                                    +{assignedCars.length - 3} altre
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* SECTION 2: UBICAZIONI GARAGE */}
+              {activeLocationSubTab === 'locations' && (
+                <div className="space-y-5 animate-fade-in">
+                  
+                  {/* Info Header Box */}
+                  <div className="bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 p-4 rounded-2xl border border-amber-500/20">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-amber-400" />
+                          <span>Gestione Ubicazioni & Garage</span>
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                          Aggiungi, rinomina o rimuovi le posizioni geografiche e i box/garage del book vetture.
+                        </p>
+                      </div>
+                      <span className="shrink-0 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>{locationsList.length} Totali</span>
+                      </span>
+                    </div>
+
+                    {locationMsg && (
+                      <div className="mt-3 p-2.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-semibold animate-fade-in flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{locationMsg}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add New Location Form */}
+                  <form onSubmit={handleAddLocationSubmit} className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 space-y-3 shadow-inner">
+                    <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">
+                      <MapPin className="w-4 h-4 text-amber-400" />
+                      <h4 className="font-bold text-slate-100 text-xs uppercase tracking-wider">Aggiungi Nuova Ubicazione / Garage</h4>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={newLocationName}
+                        onChange={(e) => setNewLocationName(e.target.value)}
+                        placeholder="Nome nuova posizione (es. Garage Milano, Casa al Mare, Deposito 2)..."
+                        className="w-full flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 shrink-0 shadow-lg shadow-amber-500/10"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Aggiungi Ubicazione</span>
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Master Locations List */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-amber-400 uppercase tracking-wider text-[11px] flex items-center gap-2">
+                        <span>Elenco Ubicazioni Predefinite ({locationsList.length})</span>
+                      </h4>
+                      <span className="text-slate-400 text-[10px]">Disponibili nel menu a tendina delle vetture</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      {locationsList.map((loc, idx) => {
+                        const assignedCars = (cars || []).filter(c => ((c.location || c.ubicazione || '').trim().toLowerCase() === loc.trim().toLowerCase()));
+                        const isEditing = editingLocName === loc;
+
+                        return (
+                          <div 
+                            key={idx}
+                            className={`p-3 rounded-xl border transition-all text-xs flex flex-col justify-between gap-2.5 ${
+                              isEditing 
+                                ? 'bg-amber-950/20 border-amber-500/50 shadow-md ring-1 ring-amber-500/30' 
+                                : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            {isEditing ? (
+                              <div className="flex items-center gap-2 w-full">
+                                <input
+                                  type="text"
+                                  value={editingLocValue}
+                                  onChange={(e) => setEditingLocValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleRenameLocationSubmit(loc, editingLocValue);
+                                    } else if (e.key === 'Escape') {
+                                      setEditingLocName(null);
+                                      setEditingLocValue('');
+                                    }
+                                  }}
+                                  autoFocus
+                                  className="flex-1 px-3 py-1.5 bg-slate-900 border border-amber-500/60 rounded-lg text-white text-xs font-semibold focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRenameLocationSubmit(loc, editingLocValue)}
+                                  className="p-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold transition-all shadow-sm"
+                                  title="Salva Modifica (Enter)"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingLocName(null);
+                                    setEditingLocValue('');
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                                  title="Annulla (Esc)"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center space-x-2 text-slate-200">
+                                  <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                  <span className="font-semibold text-sm">{loc}</span>
+                                  {assignedCars.length > 0 && (
+                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                      {assignedCars.length} {assignedCars.length === 1 ? 'vettura' : 'vetture'}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center space-x-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingLocName(loc);
+                                      setEditingLocValue(loc);
+                                    }}
+                                    className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg border border-slate-800/80 transition-all"
+                                    title={`Rinomina ubicazione "${loc}"`}
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteLocation(loc)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg border border-slate-800/80 transition-all"
+                                    title="Elimina Ubicazione"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {assignedCars.length > 0 && !isEditing && (
+                              <div className="pt-2 border-t border-slate-800/60 flex flex-wrap gap-1 items-center">
+                                <span className="text-[10px] text-slate-500 mr-1">Vetture:</span>
+                                {assignedCars.slice(0, 3).map((c, i) => (
+                                  <span key={i} className="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-slate-300 border border-slate-800 truncate max-w-[150px]">
+                                    {c.brand} {c.model}
+                                  </span>
+                                ))}
+                                {assignedCars.length > 3 && (
+                                  <span className="text-[10px] text-amber-400/80 font-bold px-1">
+                                    +{assignedCars.length - 3} altre
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
