@@ -1,5 +1,5 @@
-import React from 'react';
-import { Shield, Zap, Sparkles, Trophy, Award, Layers, MapPin, User, Car } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Shield, Zap, Sparkles, Trophy, Award, Layers, MapPin, User, Car, ChevronLeft, ChevronRight } from 'lucide-react';
 import { normalizeBrandName } from '../utils/brandLogos';
 
 export default function StatsBar({ 
@@ -16,11 +16,68 @@ export default function StatsBar({
   totalCarsCount = 0,
   filteredCount = 0
 }) {
+  const brandScrollRef = useRef(null);
+  const ownersScrollRef = useRef(null);
+  const [canScrollBrandLeft, setCanScrollBrandLeft] = useState(false);
+  const [canScrollBrandRight, setCanScrollBrandRight] = useState(true);
+
+  const checkBrandScroll = () => {
+    if (brandScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = brandScrollRef.current;
+      setCanScrollBrandLeft(scrollLeft > 2);
+      setCanScrollBrandRight(scrollLeft + clientWidth < scrollWidth - 2);
+    }
+  };
+
+  useEffect(() => {
+    checkBrandScroll();
+    const el = brandScrollRef.current;
+    if (el) {
+      el.addEventListener('scroll', checkBrandScroll, { passive: true });
+      window.addEventListener('resize', checkBrandScroll);
+      return () => {
+        el.removeEventListener('scroll', checkBrandScroll);
+        window.removeEventListener('resize', checkBrandScroll);
+      };
+    }
+  }, [brands, totalCarsCount]);
+
+  const scrollBrands = (direction) => {
+    if (brandScrollRef.current) {
+      const offset = direction === 'left' ? -350 : 350;
+      brandScrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
+
+  const handleWheelScroll = (ref) => (e) => {
+    if (e.deltaY !== 0 && ref.current) {
+      ref.current.scrollLeft += e.deltaY;
+    }
+  };
+
   return (
-    <div className="space-y-1 mb-2">
-      {/* 1. Brand Horizontal Filter Chips - Centered on desktop, smooth swipe on mobile */}
-      <div className="relative py-0.5">
-        <div className="flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 -mx-1 no-scrollbar scroll-smooth justify-start md:justify-center">
+    <div className="space-y-0.5 mb-1">
+      {/* 1. Brand Horizontal Filter Chips with Desktop Arrows & Wheel Scroll */}
+      <div className="relative flex items-center group py-0.5">
+        {/* Left Arrow Button */}
+        <button
+          type="button"
+          onClick={() => scrollBrands('left')}
+          disabled={!canScrollBrandLeft}
+          className={`hidden md:flex items-center justify-center w-6 h-7 bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-slate-300 border border-slate-700/80 rounded-l-md shrink-0 transition-all z-10 shadow-sm ${
+            !canScrollBrandLeft ? 'opacity-25 cursor-not-allowed' : 'opacity-100 hover:scale-105 active:scale-95'
+          }`}
+          title="Scorri marchi a sinistra"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* Scrollable Brands - ALWAYS justify-start so first brands (ALFA ROMEO, AUDI...) are NEVER cut off */}
+        <div 
+          ref={brandScrollRef}
+          onWheel={handleWheelScroll(brandScrollRef)}
+          className="flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 no-scrollbar scroll-smooth w-full justify-start select-none"
+        >
           <button
             type="button"
             onClick={() => setSelectedBrand('Tutti')}
@@ -58,13 +115,31 @@ export default function StatsBar({
             );
           })}
         </div>
+
+        {/* Right Arrow Button */}
+        <button
+          type="button"
+          onClick={() => scrollBrands('right')}
+          disabled={!canScrollBrandRight}
+          className={`hidden md:flex items-center justify-center w-6 h-7 bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-slate-300 border border-slate-700/80 rounded-r-md shrink-0 transition-all z-10 shadow-sm ${
+            !canScrollBrandRight ? 'opacity-25 cursor-not-allowed' : 'opacity-100 hover:scale-105 active:scale-95'
+          }`}
+          title="Scorri marchi a destra"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* 2. Proprietari (Owners) Filter Chips - Centered & aligned across all devices */}
+      {/* 2. Proprietari (Owners) Filter Chips */}
       {owners.length > 0 && setSelectedOwner && (
-        <div className="relative py-0.5 border-t border-slate-800/50">
-          <div className="flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 -mx-1 no-scrollbar scroll-smooth justify-start md:justify-center">
-            
+        <div className="relative py-0.5 border-t border-slate-800/40">
+          <div 
+            ref={ownersScrollRef}
+            onWheel={handleWheelScroll(ownersScrollRef)}
+            className={`flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 no-scrollbar scroll-smooth select-none ${
+              owners.length > 7 ? 'justify-start' : 'justify-start md:justify-center'
+            }`}
+          >
             {/* Owner Section Icon & Label */}
             <div className="flex items-center space-x-1 text-amber-400 text-xs font-bold shrink-0 pr-1 select-none">
               <User className="w-3.5 h-3.5" />
@@ -123,7 +198,7 @@ export default function StatsBar({
 
       {/* 3. Location / Garage Horizontal Filter Chips (if locations exist) */}
       {locations.length > 0 && setSelectedLocation && (
-        <div className="flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 -mx-1 no-scrollbar scroll-smooth border-t border-slate-800/40 justify-start md:justify-center">
+        <div className="flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 no-scrollbar scroll-smooth border-t border-slate-800/40 justify-start md:justify-center">
           <div className="flex items-center space-x-1 text-slate-400 text-xs font-bold shrink-0 pr-1">
             <MapPin className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Garage:</span>

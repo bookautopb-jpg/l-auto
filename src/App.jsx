@@ -1123,7 +1123,7 @@ export default function App() {
       )}
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-1.5 sm:pt-2 flex-1 w-full">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-0.5 sm:pt-1 flex-1 w-full">
         
         {/* Brand, Owner & Location Filter Chips */}
         <StatsBar
@@ -1142,7 +1142,7 @@ export default function App() {
         />
 
         {/* Toolbar Header (Results Counter, Bulk Selection Actions & Sort) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-800/80 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 my-1 pb-1 border-b border-slate-800/80 text-xs">
           
           <div className="flex items-center space-x-2.5 flex-wrap gap-y-1.5">
             <div className="flex items-center space-x-1.5">
