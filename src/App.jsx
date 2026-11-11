@@ -1096,26 +1096,26 @@ export default function App() {
 
       {/* Top Expiration Notification Banner (Shown ONLY if allowed for clients, or always for staff) */}
       {canViewExpirations(currentUser, clientPermissions) && showExpirationBar && expirationsAlerts.length > 0 && (
-        <div className="relative z-10 animate-alert-glow border-b border-amber-500/40 px-4 py-2.5 text-xs text-amber-100 shadow-lg">
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center space-x-2.5">
-              <Bell className={`w-4 h-4 shrink-0 ${hasUrgentExpirations ? 'text-rose-300 animate-bounce' : 'text-amber-300'}`} />
-              <span>
+        <div className="relative z-10 animate-alert-glow border-b border-amber-500/40 px-3 sm:px-4 py-1.5 text-xs text-amber-100 shadow-md">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center space-x-2">
+              <Bell className={`w-3.5 h-3.5 shrink-0 ${hasUrgentExpirations ? 'text-rose-300 animate-bounce' : 'text-amber-300'}`} />
+              <span className="text-[11px] sm:text-xs">
                 <strong className="text-amber-200 font-extrabold">{expirationsAlerts.length} {expirationsAlerts.length === 1 ? 'scadenza' : 'scadenze'}</strong> (Bollo, Assicurazione, Revisione, Tagliando) nei prossimi 2 mesi.
               </span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5">
               <button
                 onClick={() => setIsExpirationsModalOpen(true)}
-                className="px-3.5 py-1 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-[11px] rounded-lg shadow-md transition-all active:scale-95 shrink-0 border border-amber-300/40"
+                className="px-2.5 sm:px-3 py-1 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-[11px] rounded-lg shadow-sm transition-all active:scale-95 shrink-0 border border-amber-300/40"
               >
                 Controlla Scadenze ({expirationsAlerts.length})
               </button>
               <button
                 onClick={() => setIsAdminModalOpen(true)}
-                className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-[11px] rounded-lg border border-amber-500/40 shadow transition-all shrink-0"
+                className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-[11px] rounded-lg border border-amber-500/40 shadow transition-all shrink-0"
               >
-                ⚙️ Admin & Email
+                ⚙️ Admin
               </button>
             </div>
           </div>
@@ -1123,14 +1123,17 @@ export default function App() {
       )}
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-3 flex-1 w-full">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-1.5 sm:pt-2 flex-1 w-full">
         
-        {/* Brand & Location Filter Chips */}
+        {/* Brand, Owner & Location Filter Chips */}
         <StatsBar
           cars={cars}
           brands={brands}
           selectedBrand={selectedBrand}
           setSelectedBrand={setSelectedBrand}
+          owners={owners}
+          selectedOwner={selectedOwner}
+          setSelectedOwner={setSelectedOwner}
           locations={locations}
           selectedLocation={selectedLocation}
           setSelectedLocation={setSelectedLocation}
@@ -1138,24 +1141,37 @@ export default function App() {
           filteredCount={filteredCars.length}
         />
 
-        {/* Toolbar Header (Sort, Owner Dropdown, Selection Actions & Counter) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-2.5 border-b border-slate-800">
+        {/* Toolbar Header (Results Counter, Bulk Selection Actions & Sort) */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-800/80 text-xs">
           
-          <div className="flex items-center space-x-3 flex-wrap gap-y-2">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-bold text-slate-200">
-                Risultati Trovati:
+          <div className="flex items-center space-x-2.5 flex-wrap gap-y-1.5">
+            <div className="flex items-center space-x-1.5">
+              <span className="text-xs sm:text-sm font-bold text-slate-200">
+                Risultati:
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">
                 {filteredCars.length} vetture
               </span>
             </div>
 
+            {/* Quick Filter Reset Tags if any filter is active */}
+            {(selectedBrand !== 'Tutti' || selectedOwner !== 'Tutti' || selectedLocation !== 'Tutti' || onlyFavorites || searchQuery) && (
+              <button
+                type="button"
+                onClick={handleGoHome}
+                className="flex items-center space-x-1 px-2 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold border border-slate-700 transition-all shrink-0"
+                title="Azzera tutti i filtri e mostra tutte le auto"
+              >
+                <span>Azzera Filtri</span>
+                <span className="text-amber-400 font-bold">✕</span>
+              </button>
+            )}
+
             {/* Selection Counter & Quick Bulk Selection Actions */}
-            <div className="flex items-center space-x-2 pl-3 border-l border-slate-800 flex-wrap gap-y-2">
+            <div className="flex items-center space-x-1.5 pl-2 border-l border-slate-800 flex-wrap gap-y-1.5">
               <button
                 onClick={handleSelectAllFiltered}
-                className="flex items-center space-x-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-xl text-xs font-semibold transition-all"
+                className="flex items-center space-x-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-xl text-xs font-semibold transition-all shrink-0"
               >
                 <CheckSquare className="w-3.5 h-3.5 text-amber-400" />
                 <span>Seleziona Tutte</span>
@@ -1165,14 +1181,14 @@ export default function App() {
                 <>
                   <button
                     onClick={handleDeselectAll}
-                    className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-xl text-xs font-semibold"
+                    className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-xl text-xs font-semibold shrink-0"
                   >
                     Deseleziona ({selectedCarIds.length})
                   </button>
 
                   <button
                     onClick={() => setIsPdfReportModalOpen(true)}
-                    className="flex items-center space-x-1.5 px-3.5 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 transition-all active:scale-95"
+                    className="flex items-center space-x-1.5 px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 transition-all active:scale-95 shrink-0"
                   >
                     <Printer className="w-3.5 h-3.5" />
                     <span>Stampa / PDF ({selectedCarIds.length})</span>
@@ -1180,7 +1196,7 @@ export default function App() {
 
                   <button
                     onClick={handleDeleteSelectedCars}
-                    className="flex items-center space-x-1.5 px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition-all"
+                    className="flex items-center space-x-1 px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition-all shrink-0"
                     title="Elimina schede selezionate"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -1192,65 +1208,15 @@ export default function App() {
 
           </div>
 
-          {/* Right Toolbar Controls: Proprietario & Ordina per */}
-          <div className="flex items-center space-x-3 text-xs flex-wrap gap-y-2">
-            
-            {/* Proprietario Dropdown Menu */}
-            {owners && owners.length > 0 && (
-              <div className="flex items-center space-x-1.5">
-                <User className={`w-3.5 h-3.5 ${selectedOwner !== 'Tutti' ? 'text-amber-400' : 'text-slate-400'}`} />
-                <span className="text-slate-400 font-medium hidden md:inline">Proprietario:</span>
-                <div className="relative inline-flex items-center">
-                  <select
-                    value={selectedOwner}
-                    onChange={(e) => setSelectedOwner(e.target.value)}
-                    className={`text-xs font-semibold rounded-xl px-2.5 py-1.5 pr-7 focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none cursor-pointer border transition-all ${
-                      selectedOwner !== 'Tutti'
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-sm'
-                        : 'bg-slate-900 border-slate-700 text-slate-200 hover:border-slate-600'
-                    }`}
-                  >
-                    <option value="Tutti" className="bg-slate-900 text-slate-200">
-                      Tutti i Proprietari ({cars.length})
-                    </option>
-                    {owners.map(owner => {
-                      const count = cars.filter(c => {
-                        const carOwner = (c.proprietario || c.owner || '').trim().replace(/\s+/g, ' ').toLowerCase();
-                        return carOwner === owner.trim().replace(/\s+/g, ' ').toLowerCase();
-                      }).length;
-                      return (
-                        <option key={owner} value={owner} className="bg-slate-900 text-slate-200">
-                          {owner} ({count})
-                        </option>
-                      );
-                    })}
-                  </select>
-                  {selectedOwner !== 'Tutti' ? (
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); setSelectedOwner('Tutti'); }}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-amber-400 hover:text-amber-200 p-0.5 rounded-full"
-                      title="Azzera filtro proprietario"
-                    >
-                      ✕
-                    </button>
-                  ) : (
-                    <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
-                      ▼
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Sort Control */}
+          {/* Right Toolbar Controls: Ordina per */}
+          <div className="flex items-center space-x-2 text-xs shrink-0 ml-auto">
             <div className="flex items-center space-x-1.5">
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-slate-400 font-medium hidden md:inline">Ordina per:</span>
+              <span className="text-slate-400 font-medium hidden sm:inline">Ordina:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
+                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
               >
                 <option value="page">Ordine Predefinito</option>
                 <option value="brand">Marca (A-Z)</option>
@@ -1258,7 +1224,6 @@ export default function App() {
                 <option value="year_desc">Anno (Più Recente)</option>
               </select>
             </div>
-
           </div>
         </div>
 

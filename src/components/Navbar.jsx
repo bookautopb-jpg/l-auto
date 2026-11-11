@@ -83,8 +83,8 @@ export default function Navbar({
 
   return (
     <header className="sticky top-0 z-40 glass-panel border-b border-white/10 shadow-2xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-13 sm:h-16">
           
           {/* Logo & Title (Click to return to home / main view) */}
           <button
@@ -100,21 +100,21 @@ export default function Navbar({
               setMobileMenuOpen(false);
               setUserMenuOpen(false);
             }}
-            className="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0 text-left group transition-all transform active:scale-95 focus:outline-none"
+            className="flex items-center space-x-2 sm:space-x-2.5 cursor-pointer shrink-0 text-left group transition-all transform active:scale-95 focus:outline-none"
             title="Torna alla pagina principale"
           >
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-200 p-0.5 shadow-lg shadow-amber-500/20 shrink-0 group-hover:scale-105 group-hover:shadow-amber-500/30 transition-all">
-              <div className="w-full h-full bg-[#0b132b] rounded-[10px] sm:rounded-[14px] flex items-center justify-center">
-                <Car className="w-4 h-4 sm:w-6 sm:h-6 text-amber-400 group-hover:rotate-3 transition-transform" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-200 p-0.5 shadow-md shadow-amber-500/20 shrink-0 group-hover:scale-105 group-hover:shadow-amber-500/30 transition-all">
+              <div className="w-full h-full bg-[#0b132b] rounded-[10px] flex items-center justify-center">
+                <Car className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 group-hover:rotate-3 transition-transform" />
               </div>
             </div>
             <div>
-              <div className="flex items-center space-x-1.5 sm:space-x-2">
-                <span className="font-heading font-bold text-base sm:text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 group-hover:brightness-125 transition-all">
+              <div className="flex items-center space-x-1.5">
+                <span className="font-heading font-bold text-base sm:text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 group-hover:brightness-125 transition-all">
                   BOOK AUTO PB
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium hidden sm:block group-hover:text-slate-300 transition-colors">
+              <p className="text-[11px] text-slate-400 font-medium hidden sm:block group-hover:text-slate-300 transition-colors">
                 Collezione Vetture & Specifiche Tecniche
               </p>
             </div>
@@ -123,18 +123,18 @@ export default function Navbar({
           {/* Search Bar - Responsive & Compact to preserve room for right buttons */}
           <div className="hidden md:flex flex-1 min-w-[120px] max-w-xs lg:max-w-sm xl:max-w-md mx-2 sm:mx-3">
             <div className="relative w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cerca per Marca, Modello, Proprietario, Telaio..."
-                className="w-full pl-10 pr-9 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all shadow-inner"
+                className="w-full pl-9 pr-8 py-1.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all shadow-inner"
               />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 text-xs text-slate-400 hover:text-white transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-400 hover:text-white transition-colors"
                   title="Cancella ricerca"
                 >
                   ✕
@@ -144,13 +144,13 @@ export default function Navbar({
           </div>
 
           {/* Desktop Right Action Controls */}
-          <div className="hidden lg:flex items-center space-x-2 shrink-0">
+          <div className="hidden lg:flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             
             {/* View Switcher */}
-            <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 shrink-0">
+            <div className="flex bg-slate-900/80 p-0.5 rounded-xl border border-slate-800 shrink-0">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg text-xs font-medium transition-all ${
+                className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
                   viewMode === 'grid' 
                     ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow' 
                     : 'text-slate-400 hover:text-slate-200'
@@ -161,7 +161,7 @@ export default function Navbar({
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg text-xs font-medium transition-all ${
+                className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
                   viewMode === 'list' 
                     ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow' 
                     : 'text-slate-400 hover:text-slate-200'
@@ -176,9 +176,9 @@ export default function Navbar({
             {setTheme && (
               <button
                 onClick={() => setTheme(theme === 'military' ? 'classic' : 'military')}
-                className={`flex items-center space-x-1.5 px-2.5 py-2 rounded-xl text-xs font-bold border transition-all shrink-0 ${
+                className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all shrink-0 ${
                   theme === 'military'
-                    ? 'bg-emerald-950/80 text-amber-300 border-emerald-600/40 shadow-lg shadow-emerald-900/30'
+                    ? 'bg-emerald-950/80 text-amber-300 border-emerald-600/40 shadow-md shadow-emerald-900/30'
                     : 'bg-slate-900/60 text-slate-300 border-slate-700/60 hover:bg-slate-800 hover:text-white'
                 }`}
                 title={theme === 'military' ? "Tema Militare Mimetico Attivo (Clicca per Tema Classico)" : "Tema Scuro Classico Attivo (Clicca per Tema Militare Mimetico)"}
@@ -191,15 +191,15 @@ export default function Navbar({
             {/* Favorite Filter Toggle - Compact: Only Heart + Counter */}
             <button
               onClick={() => setOnlyFavorites(!onlyFavorites)}
-              className={`flex items-center space-x-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all shrink-0 ${
+              className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all shrink-0 ${
                 onlyFavorites 
-                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-lg shadow-rose-500/10' 
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-md shadow-rose-500/10' 
                   : 'bg-slate-900/60 text-slate-300 border-slate-700/60 hover:bg-slate-800 hover:text-white'
               }`}
               title={onlyFavorites ? "Mostra tutte le vetture" : "Filtra Vetture Preferite"}
             >
-              <Heart className={`w-4 h-4 ${onlyFavorites ? 'fill-rose-400 text-rose-400' : 'text-slate-400'}`} />
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-amber-400 font-bold border border-slate-700">
+              <Heart className={`w-3.5 h-3.5 ${onlyFavorites ? 'fill-rose-400 text-rose-400' : 'text-slate-400'}`} />
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-amber-400 font-bold border border-slate-700">
                 {favoritesCount}
               </span>
             </button>
@@ -208,18 +208,18 @@ export default function Navbar({
             {showExpirations && (
               <button
                 onClick={onOpenExpirationsModal}
-                className={`relative flex items-center space-x-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all shrink-0 ${
+                className={`relative flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all shrink-0 ${
                   hasUrgentExpirations
-                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 animate-pulse shadow-lg shadow-rose-500/20'
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 animate-pulse shadow-md shadow-rose-500/20'
                     : expirationsCount > 0
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-md shadow-amber-500/10'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm shadow-amber-500/10'
                     : 'bg-slate-900/60 text-slate-300 border-slate-700/60 hover:bg-slate-800 hover:text-white'
                 }`}
                 title="Scadenze & Notifiche Vetture (Bollo, Assicurazione, Revisione, Tagliando)"
               >
-                <Bell className={`w-4 h-4 ${hasUrgentExpirations ? 'text-rose-400' : expirationsCount > 0 ? 'text-amber-400' : 'text-slate-400'}`} />
+                <Bell className={`w-3.5 h-3.5 ${hasUrgentExpirations ? 'text-rose-400' : expirationsCount > 0 ? 'text-amber-400' : 'text-slate-400'}`} />
                 {expirationsCount > 0 && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
                     hasUrgentExpirations ? 'bg-rose-500 text-white' : 'bg-amber-500 text-slate-950'
                   }`}>
                     {expirationsCount}
@@ -232,11 +232,11 @@ export default function Navbar({
             {(isStaff || (clientPermissions && clientPermissions.showDocuments)) && (
               <button
                 onClick={onOpenCartellaDocumenti}
-                className="flex items-center space-x-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-900/60 text-slate-300 border border-slate-700/60 hover:bg-slate-800 hover:border-amber-500/40 hover:text-amber-300 transition-all shrink-0"
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/60 text-slate-300 border border-slate-700/60 hover:bg-slate-800 hover:border-amber-500/40 hover:text-amber-300 transition-all shrink-0"
                 title="Archivio & Cartella Documenti Scansionati (Libretti, Assicurazioni, Bolli)"
               >
-                <FolderOpen className="w-4 h-4 text-amber-400" />
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-amber-400 font-bold border border-slate-700">
+                <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-amber-400 font-bold border border-slate-700">
                   {totalDocumentsCount}
                 </span>
               </button>
@@ -246,10 +246,10 @@ export default function Navbar({
             {selectedCount > 0 && (
               <button
                 onClick={onOpenPdfReportModal}
-                className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all animate-fade-in"
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 transition-all animate-fade-in"
                 title="Stampa / Esporta PDF Vetture Selezionate"
               >
-                <Printer className="w-4 h-4" />
+                <Printer className="w-3.5 h-3.5" />
                 <span>PDF ({selectedCount})</span>
               </button>
             )}
@@ -259,10 +259,10 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={onOpenAdminModal}
-                className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 transition-all shrink-0 cursor-pointer active:scale-95 border border-amber-300/40"
+                className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold rounded-xl text-xs shadow-sm shadow-amber-500/20 transition-all shrink-0 cursor-pointer active:scale-95 border border-amber-300/40"
                 title="Pannello Amministratore & Email"
               >
-                <ShieldCheck className="w-4 h-4 text-slate-950" />
+                <ShieldCheck className="w-3.5 h-3.5 text-slate-950" />
                 <span>Admin</span>
               </button>
             )}
@@ -485,16 +485,16 @@ export default function Navbar({
 
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className="md:hidden py-3 border-t border-slate-800">
+        {/* Mobile Search Bar - Compact */}
+        <div className="md:hidden py-1.5 border-t border-slate-800/80">
           <div className="relative w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cerca per Marca, Modello, Proprietario, Telaio..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+              placeholder="Cerca Marca, Modello, Proprietario, Telaio..."
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             />
           </div>
         </div>
