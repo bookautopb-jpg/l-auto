@@ -4,8 +4,7 @@ import { fetchOwnersFromSupabase, syncOwnersToSupabase } from './supabase';
 const OWNERS_STORAGE_KEY = 'book_auto_pb_owners_v1';
 
 export const DEFAULT_OWNERS = [
-  'Shirantha',
-  'Luciano',
+  'Giulio',
   'Lorenzo',
   'Aziendale',
   'Collezione PB'

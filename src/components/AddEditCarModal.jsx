@@ -986,7 +986,7 @@ export default function AddEditCarModal({
                       <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
                         <User className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
                         <span>Proprietario / Intestatario</span>
-                        <InfoTooltip text="Intestatario o proprietario della vettura (es. Shirantha, Luciano, Lorenzo, Aziendale, Collezione PB)." />
+                        <InfoTooltip text="Intestatario o proprietario della vettura (es. Giulio, Lorenzo, Aziendale, Collezione PB)." />
                       </label>
                       <button
                         type="button"

@@ -2265,7 +2265,7 @@ export default function AdminModal({
                         type="text"
                         value={newOwnerName}
                         onChange={(e) => setNewOwnerName(e.target.value)}
-                        placeholder="Nome proprietario o intestatario (es. Luciano, Shirantha, Collezione PB)..."
+                        placeholder="Nome proprietario o intestatario (es. Giulio, Lorenzo, Collezione PB)..."
                         className="w-full flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                         required
                       />
