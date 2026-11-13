@@ -23,28 +23,32 @@ export default function CarListView({
 
   return (
     <div className="glass-panel rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto no-scrollbar">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-900/90 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              <th className="py-3.5 px-4 w-10 text-center">
+            <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {/* Sticky Checkbox Column Header */}
+              <th className="sticky left-0 z-30 bg-slate-900 py-3.5 px-3 w-12 min-w-[48px] max-w-[48px] text-center">
                 <input
                   type="checkbox"
                   checked={allSelected}
                   onChange={onToggleSelectAll}
-                  className="w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-amber-500/50 bg-slate-900 cursor-pointer"
+                  className="w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-amber-500/50 bg-slate-950 cursor-pointer"
                   title="Seleziona tutte"
                 />
               </th>
-              <th className="py-3.5 px-4">Vettura</th>
-              <th className="py-3.5 px-4">Proprietario</th>
-              <th className="py-3.5 px-4">Ubicazione / Garage</th>
-              <th className="py-3.5 px-4">Immatricolazione</th>
-              <th className="py-3.5 px-4">Telaio (VIN)</th>
-              <th className="py-3.5 px-4 text-right">Potenza (CV)</th>
-              <th className="py-3.5 px-4 text-right">Cilindrata</th>
-              <th className="py-3.5 px-4">Esemplari</th>
-              <th className="py-3.5 px-4 text-center">Azioni</th>
+              {/* Sticky Vettura Column Header */}
+              <th className="sticky left-12 z-30 bg-slate-900 py-3.5 px-4 min-w-[240px] sm:min-w-[280px] border-r border-slate-700/80 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.7)]">
+                Vettura
+              </th>
+              <th className="py-3.5 px-4 min-w-[150px]">Proprietario</th>
+              <th className="py-3.5 px-4 min-w-[160px]">Ubicazione / Garage</th>
+              <th className="py-3.5 px-4 min-w-[140px]">Immatricolazione</th>
+              <th className="py-3.5 px-4 min-w-[160px]">Telaio (VIN)</th>
+              <th className="py-3.5 px-4 min-w-[110px] text-right">Potenza (CV)</th>
+              <th className="py-3.5 px-4 min-w-[110px] text-right">Cilindrata</th>
+              <th className="py-3.5 px-4 min-w-[110px]">Esemplari</th>
+              <th className="py-3.5 px-4 min-w-[130px] text-center">Azioni</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/80 text-xs text-slate-200 font-medium">
@@ -52,6 +56,10 @@ export default function CarListView({
               const mainImg = car.images && car.images.length > 0 ? car.images[0] : car.pageImage;
               const isSelected = selectedCarIds.includes(car.id);
               const carExpirations = getVehicleExpirations([car]);
+              const stickyBgClass = isSelected 
+                ? 'bg-amber-950/95 group-hover:bg-amber-900/90' 
+                : 'bg-slate-950/95 group-hover:bg-slate-900/95';
+
               return (
                 <tr 
                   key={car.id} 
@@ -60,8 +68,11 @@ export default function CarListView({
                     isSelected ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'hover:bg-slate-800/50'
                   }`}
                 >
-                  {/* Checkbox */}
-                  <td className="py-3 px-4 text-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {/* Sticky Checkbox Cell */}
+                  <td 
+                    className={`sticky left-0 z-20 w-12 min-w-[48px] max-w-[48px] py-3 px-3 text-center shrink-0 transition-colors ${stickyBgClass}`} 
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={isSelected}
@@ -70,25 +81,27 @@ export default function CarListView({
                     />
                   </td>
 
-                  {/* Vettura info with thumbnail */}
-                  <td className="py-3 px-4">
+                  {/* Sticky Vettura info with thumbnail and model */}
+                  <td 
+                    className={`sticky left-12 z-20 py-3 px-4 min-w-[240px] sm:min-w-[280px] border-r border-slate-700/80 shadow-[6px_0_12px_-2px_rgba(0,0,0,0.7)] transition-colors ${stickyBgClass}`}
+                  >
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-9 rounded-lg overflow-hidden bg-slate-950 border border-slate-800 shrink-0">
                         <img src={mainImg} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center space-x-2">
-                          <span className="text-[10px] font-bold uppercase text-amber-400 tracking-wider">
+                          <span className="text-[10px] font-bold uppercase text-amber-400 tracking-wider truncate">
                             {car.brand}
                           </span>
                           {showExpirations && carExpirations.length > 0 && (
-                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-amber-500 text-slate-950 flex items-center space-x-1 animate-pulse">
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-amber-500 text-slate-950 flex items-center space-x-1 shrink-0 animate-pulse">
                               <Bell className="w-2.5 h-2.5" />
                               <span>{carExpirations.length} Scadenze</span>
                             </span>
                           )}
                         </div>
-                        <div className="font-bold text-sm text-white group-hover:text-amber-300 transition-colors">
+                        <div className="font-bold text-sm text-white group-hover:text-amber-300 transition-colors truncate">
                           {car.model}
                         </div>
                       </div>
