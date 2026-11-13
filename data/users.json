@@ -22,9 +22,10 @@
     "username": "lorenzo",
     "password": "Athena",
     "name": "Lorenzo",
-    "role": "admin",
+    "role": "super_admin",
     "email": "cantinaportaromana93@gmail.com",
-    "createdAt": "2026-11-07T11:33:34.757Z"
+    "createdAt": "2026-11-07T11:33:34.757Z",
+    "updatedAt": "2026-11-11T15:15:42.284Z"
   },
   {
     "id": "user_1794232060362",
