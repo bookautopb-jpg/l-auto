@@ -11,6 +11,7 @@ import BrandLogosModal from './components/BrandLogosModal';
 import ExpirationsModal from './components/ExpirationsModal';
 import AdminModal from './components/AdminModal';
 import AdminLoginPage from './components/AdminLoginPage';
+import MaintenancePage from './components/MaintenancePage';
 import AutoEmailNotificationPopup from './components/AutoEmailNotificationPopup';
 import CartellaDocumentiModal from './components/CartellaDocumentiModal';
 import AppGuideModal from './components/AppGuideModal';
@@ -1023,6 +1024,24 @@ export default function App() {
     );
   }
 
+  const handleDisableMaintenance = () => {
+    const updated = { ...clientPermissions, maintenanceMode: false };
+    setClientPermissions(updated);
+    saveClientPermissions(updated);
+    syncPermissionsToSupabase(updated);
+    showRealtimeToast('✅ Modalità Manutenzione disattivata: il sito è di nuovo visibile al pubblico');
+  };
+
+  // If maintenance mode is active and user is not logged in
+  if (clientPermissions?.maintenanceMode && !currentUser) {
+    return (
+      <MaintenancePage
+        message={clientPermissions?.maintenanceMessage}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    );
+  }
+
   // If user is not logged in, display the initial Admin Login Page with slideshow background
   if (!currentUser) {
     return (
@@ -1033,8 +1052,43 @@ export default function App() {
     );
   }
 
+  // If maintenance mode is active and user is a non-staff viewer / client
+  if (clientPermissions?.maintenanceMode && !isStaffUser(currentUser)) {
+    return (
+      <MaintenancePage
+        message={clientPermissions?.maintenanceMessage}
+        onLoginSuccess={handleLoginSuccess}
+        onLogout={handleLogout}
+        currentUser={currentUser}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen flex flex-col pb-16 relative transition-colors duration-500 ${theme === 'military' ? 'theme-military' : ''}`}>
+      
+      {/* Persistent Maintenance Mode Banner for Staff */}
+      {clientPermissions?.maintenanceMode && isStaffUser(currentUser) && (
+        <div className="bg-gradient-to-r from-rose-950 via-amber-950 to-rose-950 border-b border-rose-500/50 py-2.5 px-4 text-center text-xs text-white font-bold flex flex-wrap items-center justify-center gap-3 shadow-2xl z-50 sticky top-0 animate-fade-in">
+          <span className="flex items-center gap-2 text-amber-300">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+            </span>
+            <span>⚠️ MODALITÀ MANUTENZIONE ATTIVA</span>
+          </span>
+          <span className="hidden sm:inline text-slate-200 font-normal">
+            Il sito è attualmente oscurato e inaccessibile per visitatori e clienti esterni.
+          </span>
+          <button
+            type="button"
+            onClick={handleDisableMaintenance}
+            className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg transition-all active:scale-95"
+          >
+            Disattiva Manutenzione (Riapri Sito)
+          </button>
+        </div>
+      )}
       
       {/* Dynamic Active Custom Background Wallpaper */}
       {activeBackground && (

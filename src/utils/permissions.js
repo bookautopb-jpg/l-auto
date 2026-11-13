@@ -4,6 +4,10 @@
 export const CLIENT_PERMISSIONS_STORAGE_KEY = 'book_auto_pb_client_permissions_v2';
 
 export const DEFAULT_CLIENT_PERMISSIONS = {
+  // Modalità Manutenzione Globale (Oscura interamente il catalogo al pubblico)
+  maintenanceMode: false, // Default: FALSE (Sito online e attivo)
+  maintenanceMessage: 'Stiamo effettuando aggiornamenti e manutenzione al catalogo vetture. Il sito tornerà presto disponibile per la consultazione.',
+
   // Scadenze e Notifiche (Bollo, Assicurazione, Revisione, Tagliando)
   showExpirations: false, // Default: FALSE (Clienti e visitatori NON vedono le scadenze)
 

@@ -9,6 +9,7 @@ import {
   Shield, 
   CheckCircle2, 
   Car,
+  Wrench,
   KeyRound,
   FileSpreadsheet,
   Settings,
@@ -1695,6 +1696,31 @@ export default function AdminModal({
                       className="w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-amber-500 bg-slate-950 cursor-pointer"
                     />
                   </label>
+
+                  <label className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 transition-all cursor-pointer">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-rose-500/10 text-rose-400 rounded-lg">
+                        <Wrench className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="block font-bold text-slate-200">Modalità Manutenzione Sito</span>
+                          {permissions.maintenanceMode && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                              Attiva
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400">Oscura il catalogo ai visitatori e mostra la pagina di manutenzione temporanea</span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={!!permissions.maintenanceMode}
+                      onChange={(e) => handleTogglePerm('maintenanceMode', e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-700 text-rose-500 focus:ring-rose-500 bg-slate-950 cursor-pointer"
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -2692,6 +2718,77 @@ export default function AdminModal({
                     <span>Cosa possono visualizzare Clienti e Visitatori:</span>
                   </h5>
                   <span className="text-[10px] text-slate-400 italic">Clicca sulle caselle per attivare/disattivare</span>
+                </div>
+
+                {/* 0. MODALITÀ MANUTENZIONE GLOBALE */}
+                <div 
+                  className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col gap-3 ${
+                    permissions.maintenanceMode 
+                      ? 'bg-rose-950/30 border-rose-500/60 shadow-xl shadow-rose-950/50 ring-1 ring-rose-500/40' 
+                      : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start space-x-3.5">
+                      <div className={`p-2.5 rounded-xl border mt-0.5 shrink-0 transition-colors ${
+                        permissions.maintenanceMode 
+                          ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse' 
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}>
+                        <Wrench className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-sm sm:text-base">
+                            Modalità Manutenzione Globale (Oscura il Sito al Pubblico)
+                          </span>
+                          {permissions.maintenanceMode ? (
+                            <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
+                              ⚠️ ATTIVA — SITO OSCURATO AI VISITATORI
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                              ✓ SITO ONLINE & VISIBILE
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                          Quando è attiva, chiunque si colleghi dall'esterno (clienti, visitatori) vedrà <strong>esclusivamente la pagina "Sito in Manutenzione"</strong> e non potrà visualizzare le vetture, le schede o le foto. Tu e gli amministratori potrete continuare ad accedere e lavorare liberamente.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <div 
+                      onClick={() => handleTogglePerm('maintenanceMode', !permissions.maintenanceMode)}
+                      className="shrink-0 flex items-center cursor-pointer pt-1"
+                      title={permissions.maintenanceMode ? "Disattiva manutenzione e riapri il sito al pubblico" : "Attiva modalità manutenzione"}
+                    >
+                      <div className={`w-12 h-7 flex items-center rounded-full p-1 duration-300 ease-in-out ${
+                        permissions.maintenanceMode ? 'bg-rose-600 justify-end shadow-lg shadow-rose-600/40' : 'bg-slate-800 justify-start'
+                      }`}>
+                        <div className="bg-white w-5 h-5 rounded-full shadow-md transform transition-all duration-300"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Customizable Maintenance Message Input */}
+                  {permissions.maintenanceMode && (
+                    <div className="pt-2 border-t border-rose-500/30 flex flex-col gap-1.5 animate-fade-in">
+                      <label className="text-[11px] font-bold text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Messaggio visualizzato sulla pagina di manutenzione:</span>
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={permissions.maintenanceMessage || ''}
+                          onChange={(e) => handleTogglePerm('maintenanceMessage', e.target.value)}
+                          placeholder="Stiamo effettuando aggiornamenti al catalogo vetture. Torneremo presto online!"
+                          className="flex-1 px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 1. SCADENZE (DEFAULT OFF) */}
