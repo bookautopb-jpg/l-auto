@@ -87,6 +87,10 @@ export default function AdminModal({
   setShowSideGlow,
   showExpirationBar,
   setShowExpirationBar,
+  showBrandsBar,
+  setShowBrandsBar,
+  showOwnersBar,
+  setShowOwnersBar,
   clientPermissions,
   onPermissionsUpdated,
   onOpenGuideModal,
@@ -1655,6 +1659,42 @@ export default function AdminModal({
                       className="w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-amber-500 bg-slate-950 cursor-pointer"
                     />
                   </label>
+
+                  <label className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 transition-all cursor-pointer">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-amber-500/10 text-amber-400 rounded-lg">
+                        <Car className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="block font-bold text-slate-200">Barra Filtro Marchi Vetture (Home)</span>
+                        <span className="text-[10px] text-slate-400">Attiva o disattiva la barra orizzontale superiore con i marchi (Ferrari, Alfa Romeo, Audi...)</span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={!!showBrandsBar}
+                      onChange={(e) => setShowBrandsBar && setShowBrandsBar(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-amber-500 bg-slate-950 cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 transition-all cursor-pointer">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="block font-bold text-slate-200">Barra Filtro Proprietari Vetture (Home)</span>
+                        <span className="text-[10px] text-slate-400">Attiva o disattiva la barra orizzontale con i filtri dei proprietari (Tutti, Giulio, Lorenzo...)</span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={!!showOwnersBar}
+                      onChange={(e) => setShowOwnersBar && setShowOwnersBar(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-amber-500 bg-slate-950 cursor-pointer"
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -2251,6 +2291,31 @@ export default function AdminModal({
                         <span>{ownerMsg}</span>
                       </div>
                     )}
+
+                    {/* Fast Toggle Bar for Owners Bar Visibility in Home */}
+                    <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-semibold text-slate-200">Barra Proprietari nella Home:</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${
+                          showOwnersBar 
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                            : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                        }`}>
+                          {showOwnersBar ? '✓ Attiva (Visibile)' : '✕ Disattivata (Nascosta)'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowOwnersBar && setShowOwnersBar(!showOwnersBar)}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all ${
+                          showOwnersBar
+                            ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/30'
+                            : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40 shadow-sm'
+                        }`}
+                      >
+                        {showOwnersBar ? 'Disattiva Barra' : 'Attiva Barra'}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Add New Owner Form */}

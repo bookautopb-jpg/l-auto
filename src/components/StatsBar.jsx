@@ -14,7 +14,9 @@ export default function StatsBar({
   selectedLocation = 'Tutti',
   setSelectedLocation,
   totalCarsCount = 0,
-  filteredCount = 0
+  filteredCount = 0,
+  showBrandsBar = true,
+  showOwnersBar = true
 }) {
   const brandScrollRef = useRef(null);
   const ownersScrollRef = useRef(null);
@@ -30,6 +32,7 @@ export default function StatsBar({
   };
 
   useEffect(() => {
+    if (!showBrandsBar) return;
     checkBrandScroll();
     const el = brandScrollRef.current;
     if (el) {
@@ -40,7 +43,7 @@ export default function StatsBar({
         window.removeEventListener('resize', checkBrandScroll);
       };
     }
-  }, [brands, totalCarsCount]);
+  }, [brands, totalCarsCount, showBrandsBar]);
 
   const scrollBrands = (direction) => {
     if (brandScrollRef.current) {
@@ -55,84 +58,90 @@ export default function StatsBar({
     }
   };
 
+  if (!showBrandsBar && !showOwnersBar && (!locations || locations.length === 0)) {
+    return null;
+  }
+
   return (
     <div className="space-y-0.5 mb-1">
       {/* 1. Brand Horizontal Filter Chips with Desktop Arrows & Wheel Scroll */}
-      <div className="relative flex items-center group py-0.5">
-        {/* Left Arrow Button */}
-        <button
-          type="button"
-          onClick={() => scrollBrands('left')}
-          disabled={!canScrollBrandLeft}
-          className={`hidden md:flex items-center justify-center w-6 h-7 bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-slate-300 border border-slate-700/80 rounded-l-md shrink-0 transition-all z-10 shadow-sm ${
-            !canScrollBrandLeft ? 'opacity-25 cursor-not-allowed' : 'opacity-100 hover:scale-105 active:scale-95'
-          }`}
-          title="Scorri marchi a sinistra"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-
-        {/* Scrollable Brands - ALWAYS justify-start so first brands (ALFA ROMEO, AUDI...) are NEVER cut off */}
-        <div 
-          ref={brandScrollRef}
-          onWheel={handleWheelScroll(brandScrollRef)}
-          className="flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 no-scrollbar scroll-smooth w-full justify-start select-none"
-        >
+      {showBrandsBar && (
+        <div className="relative flex items-center group py-0.5">
+          {/* Left Arrow Button */}
           <button
             type="button"
-            onClick={() => setSelectedBrand('Tutti')}
-            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
-              selectedBrand === 'Tutti'
-                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
-                : 'bg-slate-900/80 text-slate-300 border-slate-700/80 hover:bg-slate-800 hover:text-white'
+            onClick={() => scrollBrands('left')}
+            disabled={!canScrollBrandLeft}
+            className={`hidden md:flex items-center justify-center w-6 h-7 bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-slate-300 border border-slate-700/80 rounded-l-md shrink-0 transition-all z-10 shadow-sm ${
+              !canScrollBrandLeft ? 'opacity-25 cursor-not-allowed' : 'opacity-100 hover:scale-105 active:scale-95'
             }`}
+            title="Scorri marchi a sinistra"
           >
-            Tutti i Marchi ({totalCarsCount})
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          
-          {brands.map(brand => {
-            const brandNorm = normalizeBrandName(brand);
-            const count = cars.filter(c => normalizeBrandName(c.brand) === brandNorm).length;
-            const isSelected = selectedBrand !== 'Tutti' && normalizeBrandName(selectedBrand) === brandNorm;
-            return (
-              <button
-                type="button"
-                key={brand}
-                onClick={() => setSelectedBrand(brand)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 flex items-center space-x-1.5 ${
-                  isSelected
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm font-bold'
-                    : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
-                }`}
-              >
-                <span className="uppercase font-bold tracking-wider">{brand}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  isSelected ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
 
-        {/* Right Arrow Button */}
-        <button
-          type="button"
-          onClick={() => scrollBrands('right')}
-          disabled={!canScrollBrandRight}
-          className={`hidden md:flex items-center justify-center w-6 h-7 bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-slate-300 border border-slate-700/80 rounded-r-md shrink-0 transition-all z-10 shadow-sm ${
-            !canScrollBrandRight ? 'opacity-25 cursor-not-allowed' : 'opacity-100 hover:scale-105 active:scale-95'
-          }`}
-          title="Scorri marchi a destra"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
+          {/* Scrollable Brands - ALWAYS justify-start so first brands (ALFA ROMEO, AUDI...) are NEVER cut off */}
+          <div 
+            ref={brandScrollRef}
+            onWheel={handleWheelScroll(brandScrollRef)}
+            className="flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 no-scrollbar scroll-smooth w-full justify-start select-none"
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedBrand('Tutti')}
+              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
+                selectedBrand === 'Tutti'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900/80 text-slate-300 border-slate-700/80 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              Tutti i Marchi ({totalCarsCount})
+            </button>
+            
+            {brands.map(brand => {
+              const brandNorm = normalizeBrandName(brand);
+              const count = cars.filter(c => normalizeBrandName(c.brand) === brandNorm).length;
+              const isSelected = selectedBrand !== 'Tutti' && normalizeBrandName(selectedBrand) === brandNorm;
+              return (
+                <button
+                  type="button"
+                  key={brand}
+                  onClick={() => setSelectedBrand(brand)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 flex items-center space-x-1.5 ${
+                    isSelected
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm font-bold'
+                      : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                  }`}
+                >
+                  <span className="uppercase font-bold tracking-wider">{brand}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isSelected ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Arrow Button */}
+          <button
+            type="button"
+            onClick={() => scrollBrands('right')}
+            disabled={!canScrollBrandRight}
+            className={`hidden md:flex items-center justify-center w-6 h-7 bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-slate-300 border border-slate-700/80 rounded-r-md shrink-0 transition-all z-10 shadow-sm ${
+              !canScrollBrandRight ? 'opacity-25 cursor-not-allowed' : 'opacity-100 hover:scale-105 active:scale-95'
+            }`}
+            title="Scorri marchi a destra"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* 2. Proprietari (Owners) Filter Chips */}
-      {owners.length > 0 && setSelectedOwner && (
-        <div className="relative py-0.5 border-t border-slate-800/40">
+      {showOwnersBar && owners.length > 0 && setSelectedOwner && (
+        <div className={`relative py-0.5 ${showBrandsBar ? 'border-t border-slate-800/40' : ''}`}>
           <div 
             ref={ownersScrollRef}
             onWheel={handleWheelScroll(ownersScrollRef)}
@@ -198,7 +207,9 @@ export default function StatsBar({
 
       {/* 3. Location / Garage Horizontal Filter Chips (if locations exist) */}
       {locations.length > 0 && setSelectedLocation && (
-        <div className="flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 no-scrollbar scroll-smooth border-t border-slate-800/40 justify-start md:justify-center">
+        <div className={`flex items-center space-x-1.5 overflow-x-auto px-1 py-0.5 no-scrollbar scroll-smooth justify-start md:justify-center ${
+          showBrandsBar || showOwnersBar ? 'border-t border-slate-800/40' : ''
+        }`}>
           <div className="flex items-center space-x-1 text-slate-400 text-xs font-bold shrink-0 pr-1">
             <MapPin className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Garage:</span>

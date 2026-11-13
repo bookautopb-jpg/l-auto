@@ -123,6 +123,27 @@ export default function App() {
     return saved !== null ? JSON.parse(saved) : true;
   });
 
+  // Display toggles for Brands & Owners filter bars
+  const [showBrandsBar, setShowBrandsBar] = useState(() => {
+    const saved = localStorage.getItem('book_auto_pb_show_brands_bar');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const [showOwnersBar, setShowOwnersBar] = useState(() => {
+    const saved = localStorage.getItem('book_auto_pb_show_owners_bar');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const handleToggleBrandsBar = (val) => {
+    setShowBrandsBar(val);
+    localStorage.setItem('book_auto_pb_show_brands_bar', JSON.stringify(val));
+  };
+
+  const handleToggleOwnersBar = (val) => {
+    setShowOwnersBar(val);
+    localStorage.setItem('book_auto_pb_show_owners_bar', JSON.stringify(val));
+  };
+
   // Active Background Wallpaper state
   const [activeBackground, setActiveBackgroundState] = useState(() => {
     return getActiveBackground();
@@ -1139,6 +1160,8 @@ export default function App() {
           setSelectedLocation={setSelectedLocation}
           totalCarsCount={cars.length}
           filteredCount={filteredCars.length}
+          showBrandsBar={showBrandsBar}
+          showOwnersBar={showOwnersBar}
         />
 
         {/* Toolbar Header (Results Counter, Bulk Selection Actions & Sort) */}
@@ -1379,6 +1402,10 @@ export default function App() {
             setShowExpirationBar(val);
             localStorage.setItem('book_auto_pb_expiration_bar', JSON.stringify(val));
           }}
+          showBrandsBar={showBrandsBar}
+          setShowBrandsBar={handleToggleBrandsBar}
+          showOwnersBar={showOwnersBar}
+          setShowOwnersBar={handleToggleOwnersBar}
           clientPermissions={clientPermissions}
           onPermissionsUpdated={(updated) => {
             setClientPermissions(updated);
