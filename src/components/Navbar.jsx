@@ -25,6 +25,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { isStaffUser, canViewExpirations } from '../utils/permissions';
+import { isLocalhostEnvironment, isLocalSandboxMode } from '../utils/supabase';
 
 export default function Navbar({ 
   searchQuery, 
@@ -113,6 +114,23 @@ export default function Navbar({
                 <span className="font-heading font-bold text-base sm:text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 group-hover:brightness-125 transition-all">
                   BOOK AUTO PB
                 </span>
+                {isLocalhostEnvironment() && (
+                  <span 
+                    className={`ml-1.5 px-2 py-0.5 text-[9px] font-bold uppercase rounded-full border flex items-center gap-1 shrink-0 ${
+                      isLocalSandboxMode() 
+                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' 
+                        : 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                    }`}
+                    title={
+                      isLocalSandboxMode() 
+                        ? 'Ambiente Sandbox Locale: isolato da GitHub. Le modifiche non toccano il sito live.' 
+                        : 'Ambiente Locale LIVE: sincronizzato direttamente con il database Cloud.'
+                    }
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${isLocalSandboxMode() ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                    <span>{isLocalSandboxMode() ? 'Sandbox Locale' : 'Local Live'}</span>
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-400 font-medium hidden sm:block group-hover:text-slate-300 transition-colors">
                 Collezione Vetture & Specifiche Tecniche

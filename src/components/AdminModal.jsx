@@ -35,7 +35,8 @@ import {
   Search,
   Filter,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  Cpu
 } from 'lucide-react';
 import { 
   getUsers, 
@@ -68,7 +69,15 @@ import {
   saveAllEmailSettingsToCloud
 } from '../utils/emailAlerts';
 import { getClientPermissions, saveClientPermissions, DEFAULT_CLIENT_PERMISSIONS } from '../utils/permissions';
-import { syncPermissionsToSupabase, upsertSingleCarToSupabase } from '../utils/supabase';
+import { 
+  syncPermissionsToSupabase, 
+  upsertSingleCarToSupabase,
+  isLocalhostEnvironment,
+  isLocalSandboxMode,
+  setLocalSandboxMode,
+  forcePullProductionCars,
+  forcePushLocalCarsToProduction
+} from '../utils/supabase';
 import { openDocument, downloadDocument } from '../utils/documentViewer';
 import { processScannedDocumentFile } from '../utils/storage';
 import { importFolderFiles } from '../utils/folderImporter';
@@ -569,6 +578,64 @@ export default function AdminModal({
   });
   const [showAdvancedEmailJS, setShowAdvancedEmailJS] = useState(false);
 
+  // Localhost Sandbox Isolation State
+  const isLocalhost = isLocalhostEnvironment();
+  const [isSandbox, setIsSandbox] = useState(() => isLocalSandboxMode());
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncMsg, setSyncMsg] = useState(null);
+
+  const handleToggleSandbox = () => {
+    const next = !isSandbox;
+    setLocalSandboxMode(next);
+    setIsSandbox(next);
+    setSyncMsg({
+      type: 'success',
+      text: next
+        ? 'Modalità Sandbox attivata: il tuo localhost è ora protetto e separato al 100% dal sito online.'
+        : 'Modalità Live attivata: attenzione, ora le modifiche locali interagiranno direttamente con il database Cloud.'
+    });
+    setTimeout(() => setSyncMsg(null), 5000);
+  };
+
+  const handlePullFromProduction = async () => {
+    if (!window.confirm("Vuoi clonare tutte le vetture aggiornate dal sito online GitHub / Supabase Cloud nel tuo computer locale?\n\nQuesto importerà la versione attuale del database.")) return;
+    setSyncLoading(true);
+    setSyncMsg(null);
+    try {
+      const remoteCars = await forcePullProductionCars();
+      if (remoteCars && remoteCars.length > 0) {
+        if (onUpdateCars) onUpdateCars(remoteCars);
+        setSyncMsg({ type: 'success', text: `✅ Clonazione riuscita! ${remoteCars.length} vetture importate dal sito online.` });
+      } else {
+        setSyncMsg({ type: 'error', text: 'Impossibile scaricare le vetture dal cloud o connessione assente.' });
+      }
+    } catch (err) {
+      setSyncMsg({ type: 'error', text: 'Errore durante la clonazione: ' + (err.message || err) });
+    } finally {
+      setSyncLoading(false);
+      setTimeout(() => setSyncMsg(null), 6000);
+    }
+  };
+
+  const handlePushToProduction = async () => {
+    if (!window.confirm(`ATTENZIONE: Stai per pubblicare le ${cars.length} vetture del tuo localhost direttamente nel database Cloud di produzione e sul sito live GitHub.\n\nVuoi procedere?`)) return;
+    setSyncLoading(true);
+    setSyncMsg(null);
+    try {
+      const ok = await forcePushLocalCarsToProduction(cars);
+      if (ok) {
+        setSyncMsg({ type: 'success', text: `🚀 Pubblicazione riuscita! ${cars.length} vetture sincronizzate con il sito live GitHub.` });
+      } else {
+        setSyncMsg({ type: 'error', text: 'Errore durante la sincronizzazione con Supabase Cloud.' });
+      }
+    } catch (err) {
+      setSyncMsg({ type: 'error', text: 'Errore durante la pubblicazione: ' + (err.message || err) });
+    } finally {
+      setSyncLoading(false);
+      setTimeout(() => setSyncMsg(null), 6000);
+    }
+  };
+
   const handleRunTestEmail = async (providerOverride = null) => {
     const targetProvider = providerOverride || emailProvider;
     setIsSendingTest(true);
@@ -1022,6 +1089,91 @@ export default function AdminModal({
           {/* TAB 1: STRUMENTI & NOTIFICHE EMAIL */}
           {activeTab === 'tools' && (
             <div className="space-y-6 animate-fade-in">
+
+              {/* Ambiente di Esecuzione & Isolamento Sandbox */}
+              <div className="p-4 sm:p-5 rounded-2xl border transition-all bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 border-indigo-500/30 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 shrink-0">
+                      <Cpu className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-bold text-slate-100 text-sm">
+                          {isLocalhost ? 'Ambiente Locale di Sviluppo' : 'Ambiente Ufficiale di Produzione'}
+                        </h4>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1 ${
+                          isLocalhost 
+                            ? (isSandbox ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/40')
+                            : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isLocalhost && isSandbox ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                          <span>{isLocalhost ? (isSandbox ? '🧪 Sandbox Protetto' : '⚡ Local Live') : '🌐 GitHub Pages Live'}</span>
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                        {isLocalhost 
+                          ? (isSandbox 
+                              ? 'Isolamento attivo: qualsiasi vettura inserita, modificata o eliminata su questo computer rimane locale e NON tocca il sito live GitHub né il database Cloud.'
+                              : 'Modalità diretta attiva: attenzione, le modifiche su localhost sono inviate direttamente al database Cloud in tempo reale.')
+                          : 'Sei sul sito pubblico ufficiale. Tutte le modifiche sono sincronizzate in tempo reale con i visitatori e i dispositivi autorizzati.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {isLocalhost && (
+                    <button
+                      type="button"
+                      onClick={handleToggleSandbox}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all shrink-0 ${
+                        isSandbox 
+                          ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                          : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40'
+                      }`}
+                    >
+                      {isSandbox ? 'Passa a Live Cloud' : 'Attiva Sandbox Protetto'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Localhost Sync Action Buttons */}
+                {isLocalhost && (
+                  <div className="mt-4 pt-3.5 border-t border-slate-800/80 flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      disabled={syncLoading}
+                      onClick={handlePullFromProduction}
+                      className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/40 text-slate-200 hover:text-cyan-300 font-semibold text-xs flex items-center space-x-2 transition-all disabled:opacity-50"
+                      title="Importa tutte le vetture dal database cloud live nel tuo computer locale"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${syncLoading ? 'animate-spin' : ''}`} />
+                      <span>Clona Dati da GitHub Cloud</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={syncLoading}
+                      onClick={handlePushToProduction}
+                      className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/40 text-slate-200 hover:text-amber-300 font-semibold text-xs flex items-center space-x-2 transition-all disabled:opacity-50"
+                      title="Invia le vetture di localhost direttamente al database cloud live"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Pubblica Dati Locali su GitHub Cloud</span>
+                    </button>
+                  </div>
+                )}
+
+                {syncMsg && (
+                  <div className={`mt-3 p-2.5 rounded-xl text-xs font-medium flex items-center space-x-2 animate-fade-in ${
+                    syncMsg.type === 'success' 
+                      ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-300' 
+                      : 'bg-rose-500/15 border border-rose-500/40 text-rose-300'
+                  }`}>
+                    {syncMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" /> : <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />}
+                    <span>{syncMsg.text}</span>
+                  </div>
+                )}
+              </div>
               
               {/* Quick Admin Actions */}
               <div className="space-y-3">
@@ -2693,7 +2845,7 @@ export default function AdminModal({
                     <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                       Scegli cosa possono vedere o non vedere le persone esterne (clienti e visitatori del sito).
                       <br className="hidden sm:inline" />
-                      <strong className="text-amber-300"> Nota:</strong> Tu come <span className="underline">Super Admin</span>, Luciano come <span className="underline">Gestore</span> e tutti gli <span className="underline">Admin</span> avrete <strong>SEMPRE visibilità completa al 100%</strong> su scadenze e dati riservati.
+                      <strong className="text-amber-300"> Nota:</strong> Tu come <span className="underline">Super Admin</span> e tutti gli utenti autorizzati <span className="underline">Admin</span> avrete <strong>SEMPRE visibilità completa al 100%</strong> su scadenze e dati riservati.
                     </p>
                   </div>
                   <span className="shrink-0 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
@@ -2872,7 +3024,7 @@ export default function AdminModal({
                         )}
                       </div>
                       <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                        Se disattivato, il codice di telaio (VIN) sarà oscurato o visibile solo a te, a Luciano e agli Admin.
+                        Se disattivato, il codice di telaio (VIN) sarà oscurato o visibile solo a te e agli Admin.
                       </p>
                     </div>
                   </div>

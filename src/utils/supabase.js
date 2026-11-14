@@ -18,6 +18,43 @@ export const supabase = isSupabaseConfigured
     })
   : null;
 
+// ---------------------------------------------------------------------------
+// LOCALHOST SANDBOX ISOLATION
+// Ensures that localhost runs completely isolated from live GitHub production:
+// writes, deletes, real-time broadcasts and listeners are paused locally so
+// that experimentation never modifies or corrupts the live site or database.
+// ---------------------------------------------------------------------------
+export function isLocalhostEnvironment() {
+  if (typeof window === 'undefined') return false;
+  const h = window.location.hostname;
+  return (
+    h === 'localhost' ||
+    h === '127.0.0.1' ||
+    h.startsWith('192.168.') ||
+    h.startsWith('10.') ||
+    h.endsWith('.local')
+  );
+}
+
+const LOCAL_SANDBOX_KEY = 'book_auto_pb_localhost_mode';
+
+export function isLocalSandboxMode() {
+  if (!isLocalhostEnvironment()) return false;
+  try {
+    const saved = localStorage.getItem(LOCAL_SANDBOX_KEY);
+    // On localhost, default is always protected sandbox mode
+    return saved !== 'live_production';
+  } catch (e) {
+    return true;
+  }
+}
+
+export function setLocalSandboxMode(enabled) {
+  try {
+    localStorage.setItem(LOCAL_SANDBOX_KEY, enabled ? 'sandbox' : 'live_production');
+  } catch (e) {}
+}
+
 // Map DB row to Car object format preserving 100% of car fields, photos, and document details
 export function mapRowToCar(row) {
   if (!row) return null;
@@ -117,8 +154,11 @@ export function mapCarToRow(car) {
 }
 
 // Fetch all cars from Supabase with safe timeout (filtering out system configs)
-export async function fetchCarsFromSupabase(timeoutMs = 8000) {
+export async function fetchCarsFromSupabase(timeoutMs = 8000, bypassSandbox = false) {
   if (!supabase) return null;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return null;
+  }
   try {
     const fetchPromise = supabase
       .from('cars')
@@ -149,8 +189,12 @@ export async function fetchCarsFromSupabase(timeoutMs = 8000) {
 }
 
 // Upsert a single car to Supabase immediately and safely
-export async function upsertSingleCarToSupabase(car) {
+export async function upsertSingleCarToSupabase(car, bypassSandbox = false) {
   if (!supabase || !car || !car.id || String(car.id).startsWith('__')) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    console.log(`[Sandbox Locale] Salvataggio vettura "${car.brand || ''} ${car.model || ''}" solo in locale (Cloud Supabase protetto).`);
+    return true;
+  }
   try {
     const row = mapCarToRow(car);
     const { error } = await supabase.from('cars').upsert(row, { onConflict: 'id' });
@@ -166,8 +210,12 @@ export async function upsertSingleCarToSupabase(car) {
 }
 
 // Upsert all cars to Supabase (excluding system configs) with automatic batch chunking & single car fallback
-export async function syncCarsToSupabase(cars) {
+export async function syncCarsToSupabase(cars, bypassSandbox = false) {
   if (!supabase || !Array.isArray(cars) || cars.length === 0) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    console.log('[Sandbox Locale] Sincronizzazione vetture completata solo in locale (Cloud Supabase protetto).');
+    return true;
+  }
   try {
     const rows = cars
       .filter(c => c && c.id && !String(c.id).startsWith('__'))
@@ -203,8 +251,11 @@ export async function syncCarsToSupabase(cars) {
 }
 
 // Fetch Client & Visitor Permissions from Supabase Cloud
-export async function fetchPermissionsFromSupabase(timeoutMs = 6000) {
+export async function fetchPermissionsFromSupabase(timeoutMs = 6000, bypassSandbox = false) {
   if (!supabase) return null;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return null;
+  }
   try {
     const fetchPromise = supabase
       .from('cars')
@@ -232,8 +283,12 @@ export async function fetchPermissionsFromSupabase(timeoutMs = 6000) {
 }
 
 // Upsert Client & Visitor Permissions to Supabase Cloud
-export async function syncPermissionsToSupabase(permissions) {
+export async function syncPermissionsToSupabase(permissions, bypassSandbox = false) {
   if (!supabase || !permissions) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    console.log('[Sandbox Locale] Permessi salvati solo in locale (Cloud Supabase protetto).');
+    return true;
+  }
   try {
     const payload = {
       id: '__app_permissions__',
@@ -254,8 +309,12 @@ export async function syncPermissionsToSupabase(permissions) {
 }
 
 // Permanently delete a car from Supabase Cloud
-export async function deleteCarFromSupabase(carId) {
+export async function deleteCarFromSupabase(carId, bypassSandbox = false) {
   if (!supabase || !carId) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    console.log(`[Sandbox Locale] Eliminazione auto ${carId} eseguita solo in locale (Cloud Supabase protetto).`);
+    return true;
+  }
   try {
     const { error } = await supabase
       .from('cars')
@@ -273,8 +332,12 @@ export async function deleteCarFromSupabase(carId) {
 }
 
 // Permanently delete multiple cars from Supabase Cloud
-export async function deleteCarsFromSupabase(carIds) {
+export async function deleteCarsFromSupabase(carIds, bypassSandbox = false) {
   if (!supabase || !Array.isArray(carIds) || carIds.length === 0) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    console.log(`[Sandbox Locale] Eliminazione massiva eseguita solo in locale (Cloud Supabase protetto).`);
+    return true;
+  }
   try {
     const { error } = await supabase
       .from('cars')
@@ -292,8 +355,11 @@ export async function deleteCarsFromSupabase(carIds) {
 }
 
 // Fetch Deleted Car IDs (Tombstones) from Supabase Cloud
-export async function fetchDeletedCarIdsFromSupabase(timeoutMs = 6000) {
+export async function fetchDeletedCarIdsFromSupabase(timeoutMs = 6000, bypassSandbox = false) {
   if (!supabase) return [];
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return [];
+  }
   try {
     const fetchPromise = supabase
       .from('cars')
@@ -320,8 +386,11 @@ export async function fetchDeletedCarIdsFromSupabase(timeoutMs = 6000) {
 }
 
 // Sync Deleted Car IDs (Tombstones) to Supabase Cloud
-export async function syncDeletedCarIdsToSupabase(deletedIds) {
+export async function syncDeletedCarIdsToSupabase(deletedIds, bypassSandbox = false) {
   if (!supabase || !Array.isArray(deletedIds)) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return true;
+  }
   try {
     const payload = {
       id: '__deleted_cars__',
@@ -342,8 +411,11 @@ export async function syncDeletedCarIdsToSupabase(deletedIds) {
 }
 
 // Fetch Email Configuration from Supabase Cloud
-export async function fetchEmailConfigFromSupabase(timeoutMs = 6000) {
+export async function fetchEmailConfigFromSupabase(timeoutMs = 6000, bypassSandbox = false) {
   if (!supabase) return null;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return null;
+  }
   try {
     const fetchPromise = supabase
       .from('cars')
@@ -370,8 +442,11 @@ export async function fetchEmailConfigFromSupabase(timeoutMs = 6000) {
 }
 
 // Sync Email Configuration to Supabase Cloud
-export async function syncEmailConfigToSupabase(config) {
+export async function syncEmailConfigToSupabase(config, bypassSandbox = false) {
   if (!supabase || !config || typeof config !== 'object') return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return true;
+  }
   try {
     const payload = {
       id: '__email_config__',
@@ -392,8 +467,11 @@ export async function syncEmailConfigToSupabase(config) {
 }
 
 // Fetch App Users from Supabase Cloud
-export async function fetchUsersFromSupabase(timeoutMs = 6000) {
+export async function fetchUsersFromSupabase(timeoutMs = 6000, bypassSandbox = false) {
   if (!supabase) return null;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return null;
+  }
   try {
     const fetchPromise = supabase
       .from('cars')
@@ -421,8 +499,11 @@ export async function fetchUsersFromSupabase(timeoutMs = 6000) {
 }
 
 // Sync App Users to Supabase Cloud
-export async function syncUsersToSupabase(users) {
+export async function syncUsersToSupabase(users, bypassSandbox = false) {
   if (!supabase || !Array.isArray(users) || users.length === 0) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return true;
+  }
   try {
     const payload = {
       id: '__app_users__',
@@ -443,8 +524,11 @@ export async function syncUsersToSupabase(users) {
 }
 
 // Fetch Locations from Supabase Cloud
-export async function fetchLocationsFromSupabase(timeoutMs = 6000) {
+export async function fetchLocationsFromSupabase(timeoutMs = 6000, bypassSandbox = false) {
   if (!supabase) return null;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return null;
+  }
   try {
     const fetchPromise = supabase
       .from('cars')
@@ -471,8 +555,11 @@ export async function fetchLocationsFromSupabase(timeoutMs = 6000) {
 }
 
 // Sync Locations to Supabase Cloud
-export async function syncLocationsToSupabase(locations) {
+export async function syncLocationsToSupabase(locations, bypassSandbox = false) {
   if (!supabase || !Array.isArray(locations) || locations.length === 0) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return true;
+  }
   try {
     const payload = {
       id: '__app_locations__',
@@ -493,8 +580,11 @@ export async function syncLocationsToSupabase(locations) {
 }
 
 // Fetch Owners from Supabase Cloud
-export async function fetchOwnersFromSupabase(timeoutMs = 6000) {
+export async function fetchOwnersFromSupabase(timeoutMs = 6000, bypassSandbox = false) {
   if (!supabase) return null;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return null;
+  }
   try {
     const fetchPromise = supabase
       .from('cars')
@@ -521,8 +611,11 @@ export async function fetchOwnersFromSupabase(timeoutMs = 6000) {
 }
 
 // Sync Owners to Supabase Cloud
-export async function syncOwnersToSupabase(owners) {
+export async function syncOwnersToSupabase(owners, bypassSandbox = false) {
   if (!supabase || !Array.isArray(owners) || owners.length === 0) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return true;
+  }
   try {
     const payload = {
       id: '__app_owners__',
@@ -543,8 +636,11 @@ export async function syncOwnersToSupabase(owners) {
 }
 
 // Fetch Backgrounds from Supabase Cloud
-export async function fetchBackgroundsFromSupabase(timeoutMs = 6000) {
+export async function fetchBackgroundsFromSupabase(timeoutMs = 6000, bypassSandbox = false) {
   if (!supabase) return null;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return null;
+  }
   try {
     const fetchPromise = supabase
       .from('cars')
@@ -571,8 +667,11 @@ export async function fetchBackgroundsFromSupabase(timeoutMs = 6000) {
 }
 
 // Sync Backgrounds to Supabase Cloud
-export async function syncBackgroundsToSupabase(backgrounds) {
+export async function syncBackgroundsToSupabase(backgrounds, bypassSandbox = false) {
   if (!supabase || !Array.isArray(backgrounds) || backgrounds.length === 0) return false;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return true;
+  }
   try {
     const payload = {
       id: '__app_backgrounds__',
@@ -595,8 +694,12 @@ export async function syncBackgroundsToSupabase(backgrounds) {
 let activeRealtimeChannel = null;
 
 // Subscribe to real-time events (Postgres DB changes and Instant Broadcasts)
-export function subscribeToCarsRealtime(onCarEvent) {
+export function subscribeToCarsRealtime(onCarEvent, bypassSandbox = false) {
   if (!supabase) return () => {};
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    console.log('📡 [Sandbox Locale] Sottoscrizione Realtime Supabase sospesa (ambiente locale isolato).');
+    return () => {};
+  }
 
   if (activeRealtimeChannel) {
     try {
@@ -687,8 +790,12 @@ export function subscribeToCarsRealtime(onCarEvent) {
 }
 
 // Broadcast an immediate real-time change to all other devices (< 100ms)
-export async function broadcastCarChange(eventType, carData, carId = null) {
+export async function broadcastCarChange(eventType, carData, carId = null, bypassSandbox = false) {
   if (!supabase) return;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    console.log('📡 [Sandbox Locale] Broadcast evento saltato (nessuna modifica inviata al sito live).');
+    return;
+  }
   try {
     const channel = activeRealtimeChannel || supabase.channel('cars-realtime-room');
     if (typeof window !== 'undefined' && !window.__client_session_id) {
@@ -713,8 +820,11 @@ export async function broadcastCarChange(eventType, carData, carId = null) {
 }
 
 // Broadcast an immediate real-time users update to all other devices (< 100ms)
-export async function broadcastUserChange(users) {
+export async function broadcastUserChange(users, bypassSandbox = false) {
   if (!supabase) return;
+  if (!bypassSandbox && isLocalSandboxMode()) {
+    return;
+  }
   try {
     const channel = activeRealtimeChannel || supabase.channel('cars-realtime-room');
     if (typeof window !== 'undefined' && !window.__client_session_id) {
@@ -735,5 +845,22 @@ export async function broadcastUserChange(users) {
     console.warn('Realtime broadcast users error:', err);
   }
 }
+
+// ---------------------------------------------------------------------------
+// EXPLICIT SYNC UTILITIES FOR ADMIN PANEL
+// Allow the administrator on localhost to intentionally import live production data,
+// or intentionally publish local data to GitHub/Supabase production with explicit consent.
+// ---------------------------------------------------------------------------
+
+// Explicitly pull fresh production cars from Supabase Cloud (bypasses sandbox guard)
+export async function forcePullProductionCars() {
+  return await fetchCarsFromSupabase(12000, true);
+}
+
+// Explicitly push current cars to Supabase Cloud production (bypasses sandbox guard)
+export async function forcePushLocalCarsToProduction(cars) {
+  return await syncCarsToSupabase(cars, true);
+}
+
 
 
